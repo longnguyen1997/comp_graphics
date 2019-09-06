@@ -14,6 +14,11 @@
 
 using namespace std;
 
+#define KEY_UP 265
+#define KEY_DOWN 264
+#define KEY_LEFT 263
+#define KEY_RIGHT 262
+
 // Globals
 uint32_t program;
 
@@ -27,7 +32,9 @@ vector<Vector3f> vecn;
 vector<vector<unsigned>> vecf;
 
 // You will need more global variables to implement color and position changes
-
+int num_colors;
+int current_color = 0;
+GLfloat lightPos[] = { 2.0f, 3.0f, 5.0f, 1.0f };
 
 void keyCallback(GLFWwindow* window, int key,
     int scancode, int action, int mods)
@@ -42,8 +49,20 @@ void keyCallback(GLFWwindow* window, int key,
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     } else if (key == 'A') {
         printf("Key A pressed\n");
+    } else if (key == 'C') {
+        cout << "Changing teapot colors." << endl;
+        current_color += 1;
+        current_color %= num_colors;
+    } else if (key == KEY_UP) {
+        lightPos[1] += 0.5;
+    } else if (key == KEY_DOWN) {
+        lightPos[1] -= 0.5;
+    } else if (key == KEY_RIGHT) {
+        lightPos[0] += 0.5;
+    } else if (key == KEY_LEFT) {
+        lightPos[0] -= 0.5;
     } else {
-        printf("Unhandled key press %d\n", key);
+        printf("Unhandled key press: %d.\n", key);
     }
 }
 
@@ -155,9 +174,11 @@ void updateMaterialUniforms()
     { 0.5f, 0.9f, 0.3f, 1.0f },
     { 0.3f, 0.8f, 0.9f, 1.0f } };
 
+    num_colors = 4;
+
     // Here we use the first color entry as the diffuse color
     int loc = glGetUniformLocation(program, "diffColor");
-    glUniform4fv(loc, 1, diffColors[0]);
+    glUniform4fv(loc, 1, diffColors[current_color]);
 
     // Define specular color and shininess
     GLfloat specColor[] = { 0.2f, 0.2f, 0.2f, 1.0f };
@@ -173,7 +194,6 @@ void updateMaterialUniforms()
 void updateLightUniforms()
 {
     // Light Position
-    GLfloat lightPos[] = { 2.0f, 3.0f, 5.0f, 1.0f };
     int loc = glGetUniformLocation(program, "lightPos");
     glUniform4fv(loc, 1, lightPos);
 
@@ -194,7 +214,7 @@ int main(int argc, char** argv)
 {
     loadInput();
 
-    GLFWwindow* window = createOpenGLWindow(640, 480, "a0");
+    GLFWwindow* window = createOpenGLWindow(960, 720, "a0");
     
     // setup the keyboard event handler
     glfwSetKeyCallback(window, keyCallback);
