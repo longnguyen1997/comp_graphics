@@ -35,11 +35,11 @@
 //========================================================================
 
 // Define this to 1 if building GLFW for X11
-/* #undef _GLFW_X11 */
+#define _GLFW_X11
 // Define this to 1 if building GLFW for Win32
 /* #undef _GLFW_WIN32 */
 // Define this to 1 if building GLFW for Cocoa
-#define _GLFW_COCOA
+/* #undef _GLFW_COCOA */
 // Define this to 1 if building GLFW for Wayland
 /* #undef _GLFW_WAYLAND */
 // Define this to 1 if building GLFW for Mir
@@ -54,12 +54,12 @@
 /* #undef _GLFW_USE_HYBRID_HPG */
 
 // Define this to 1 if the Xxf86vm X11 extension is available
-/* #undef _GLFW_HAS_XF86VM */
+#define _GLFW_HAS_XF86VM
 
 // Define this to 1 if glfwInit should change the current directory
-#define _GLFW_USE_CHDIR
+/* #undef _GLFW_USE_CHDIR */
 // Define this to 1 if glfwCreateWindow should populate the menu bar
-#define _GLFW_USE_MENUBAR
+/* #undef _GLFW_USE_MENUBAR */
 // Define this to 1 if windows should use full resolution on Retina displays
-#define _GLFW_USE_RETINA
+/* #undef _GLFW_USE_RETINA */
 
