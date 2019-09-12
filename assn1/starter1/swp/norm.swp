@@ -1,0 +1,4 @@
+bez2 profile 50 4
+[-2 2] [-4 0] [0 0] [-2 -2]
+
+srev . 90 profile
