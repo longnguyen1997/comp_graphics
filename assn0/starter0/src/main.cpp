@@ -59,7 +59,7 @@ void keyCallback(GLFWwindow *window, int key,
     }
     else if (key == 'C')
     {
-        cout << "Changing teapot colors." << endl;
+        cout << "Changing object color." << endl;
         current_color += 1;
         current_color %= num_colors;
     }
