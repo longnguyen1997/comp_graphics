@@ -11,6 +11,8 @@
 #include "starter0_util.h"
 #include "recorder.h"
 #include "teapot.h"
+#include <string.h>
+#include <stdio.h>
 
 using namespace std;
 
@@ -21,6 +23,7 @@ using namespace std;
 
 // Globals
 uint32_t program;
+const int buffer_size = 4096;
 
 // This is the list of points (3D vectors)
 vector<Vector3f> vecv;
@@ -29,39 +32,55 @@ vector<Vector3f> vecv;
 vector<Vector3f> vecn;
 
 // This is the list of faces (indices into vecv and vecn)
-vector<vector<unsigned>> vecf;
+vector<vector<int>> vecf;
 
 // You will need more global variables to implement color and position changes
 int num_colors;
 int current_color = 0;
 GLfloat lightPos[] = { 2.0f, 3.0f, 5.0f, 1.0f };
 
-void keyCallback(GLFWwindow* window, int key,
-    int scancode, int action, int mods)
+void keyCallback(GLFWwindow *window, int key,
+                 int scancode, int action, int mods)
 {
-    if (action == GLFW_RELEASE) { // only handle PRESS and REPEAT
+    if (action == GLFW_RELEASE)   // only handle PRESS and REPEAT
+    {
         return;
     }
 
     // Special keys (arrows, CTRL, ...) are documented
     // here: http://www.glfw.org/docs/latest/group__keys.html
-    if (key == GLFW_KEY_ESCAPE) {
+    if (key == GLFW_KEY_ESCAPE)
+    {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
-    } else if (key == 'A') {
+    }
+    else if (key == 'A')
+    {
         printf("Key A pressed\n");
-    } else if (key == 'C') {
+    }
+    else if (key == 'C')
+    {
         cout << "Changing teapot colors." << endl;
         current_color += 1;
         current_color %= num_colors;
-    } else if (key == KEY_UP) {
+    }
+    else if (key == KEY_UP)
+    {
         lightPos[1] += 0.5;
-    } else if (key == KEY_DOWN) {
+    }
+    else if (key == KEY_DOWN)
+    {
         lightPos[1] -= 0.5;
-    } else if (key == KEY_RIGHT) {
+    }
+    else if (key == KEY_RIGHT)
+    {
         lightPos[0] += 0.5;
-    } else if (key == KEY_LEFT) {
+    }
+    else if (key == KEY_LEFT)
+    {
         lightPos[0] -= 0.5;
-    } else {
+    }
+    else
+    {
         printf("Unhandled key press: %d.\n", key);
     }
 }
@@ -71,13 +90,13 @@ void drawTriangle()
     // set a reasonable upper limit for the buffer size
     GeometryRecorder rec(1024);
     rec.record(Vector3f(0.0, 0.0, 0.0), // Position
-        Vector3f(0.0, 0.0, 1.0));// Normal
+               Vector3f(0.0, 0.0, 1.0));// Normal
 
     rec.record(Vector3f(3.0, 0.0, 0.0),
-        Vector3f(0.0, 0.0, 1.0));
+               Vector3f(0.0, 0.0, 1.0));
 
     rec.record(Vector3f(3.0, 3.0, 0.0),
-        Vector3f(0.0, 0.0, 1.0));
+               Vector3f(0.0, 0.0, 1.0));
     rec.draw();
 }
 
@@ -85,42 +104,93 @@ void drawTeapot()
 {
     // set the required buffer size exactly.
     GeometryRecorder rec(teapot_num_faces * 3);
-    for (int idx : teapot_indices) {
+    for (int idx : teapot_indices)
+    {
         Vector3f position(teapot_positions[idx * 3 + 0],
-            teapot_positions[idx * 3 + 1],
-            teapot_positions[idx * 3 + 2]);
+                          teapot_positions[idx * 3 + 1],
+                          teapot_positions[idx * 3 + 2]);
 
         Vector3f normal(teapot_normals[idx * 3 + 0],
-            teapot_normals[idx * 3 + 1],
-            teapot_normals[idx * 3 + 2]);
+                        teapot_normals[idx * 3 + 1],
+                        teapot_normals[idx * 3 + 2]);
 
         rec.record(position, normal);
     }
     rec.draw();
 }
 
-void drawObjMesh() {
+void drawObjMesh()
+{
     // draw obj mesh here
     // read vertices and face indices from vecv, vecn, vecf
+    while (true)
+    {
+        char line[buffer_size];
+        // EOF, exit.
+        if (!(cin.getline(line, buffer_size))) break;
+        stringstream ss(line);
+        Vector3f v;
+        string s;
+        ss >> s;
+        if (s == "v" || s == "vn") ss >> v[0] >> v[1] >> v[2];
+        if (s == "v") vecv.push_back(v);
+        if (s == "vn") vecn.push_back(v);
+        if (s == "f")
+        {
+            // a b c d e f g h i
+            vector<int> vertices;
+            vector<string> vertex_strs(3);
+            ss >> vertex_strs[0] >> vertex_strs[1] >> vertex_strs[2];
+            for (int i = 0; i < 3; i++)
+            {
+                char *token = strtok((char *)vertex_strs[i].c_str(), "/ ");
+                while (token != NULL)
+                {
+                    // cout << stoi(token) << endl;
+                    vertices.push_back(stoi(token));
+                    // printf("token %d\n", stoi(token));
+                    token = strtok(NULL, "/");
+                }
+            }
+            vecf.push_back(vertices);
+        }
+    }
+
+    // Render.
+    GeometryRecorder rec(131072 * 10);
+    for (int i = 0; i < vecf.size(); i++)
+    {
+        std::vector<int> vertices = vecf[i];
+        // cout << "face" << endl;
+        // for (int i =0 ; i < 9; i++) cout << vertices[i] << endl;
+        rec.record(vecv[(int)vertices[0] - 1], vecn[(int)vertices[2] - 1]);
+        rec.record(vecv[(int)vertices[3] - 1], vecn[(int)vertices[5] - 1]);
+        rec.record(vecv[(int)vertices[6] - 1], vecn[(int)vertices[8] - 1]);
+    }
+
+    rec.draw();
 }
 
 // This function is responsible for displaying the object.
 void drawScene()
 {
-    // drawObjMesh();
-    drawTeapot();
+    drawObjMesh();
+    // drawTeapot();
 }
 
-void setViewport(GLFWwindow* window)
+void setViewport(GLFWwindow *window)
 {
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
     // make sure the viewport is square-shaped.
-    if (width > height) {
+    if (width > height)
+    {
         int offsetx = (width - height) / 2;
         glViewport(offsetx, 0, height, height);
-    } else {
+    }
+    else
+    {
         int offsety = (height - width) / 2;
         glViewport(0, offsety, width, width);
     }
@@ -134,7 +204,7 @@ void updateCameraUniforms()
     float farz = 100.0f;
     float aspect = 1.0f;
     Matrix4f P = Matrix4f::perspectiveProjection(
-        fovy_radians, aspect, nearz, farz);
+                     fovy_radians, aspect, nearz, farz);
 
     // See https://www.opengl.org/sdk/docs/man/html/glUniform.xhtml
     // for the many version of glUniformXYZ()
@@ -168,11 +238,13 @@ void updateCameraUniforms()
 void updateMaterialUniforms()
 {
     // Here are some colors you might use - feel free to add more
-    GLfloat diffColors[4][4] = { 
-    { 0.5f, 0.5f, 0.9f, 1.0f },
-    { 0.9f, 0.5f, 0.5f, 1.0f },
-    { 0.5f, 0.9f, 0.3f, 1.0f },
-    { 0.3f, 0.8f, 0.9f, 1.0f } };
+    GLfloat diffColors[4][4] =
+    {
+        { 0.5f, 0.5f, 0.9f, 1.0f },
+        { 0.9f, 0.5f, 0.5f, 1.0f },
+        { 0.5f, 0.9f, 0.3f, 1.0f },
+        { 0.3f, 0.8f, 0.9f, 1.0f }
+    };
 
     num_colors = 4;
 
@@ -210,12 +282,12 @@ void loadInput()
 
 // Main routine.
 // Set up OpenGL, define the callbacks and start the main loop
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
     loadInput();
 
-    GLFWwindow* window = createOpenGLWindow(960, 720, "a0");
-    
+    GLFWwindow *window = createOpenGLWindow(960, 720, "a0");
+
     // setup the keyboard event handler
     glfwSetKeyCallback(window, keyCallback);
 
@@ -228,7 +300,8 @@ int main(int argc, char** argv)
     // of OpenGL. All OpenGL programs define a vertex shader
     // and a fragment shader.
     program = compileProgram(c_vertexshader, c_fragmentshader);
-    if (!program) {
+    if (!program)
+    {
         printf("Cannot compile program\n");
         return -1;
     }
@@ -236,7 +309,8 @@ int main(int argc, char** argv)
     glUseProgram(program);
 
     // Main Loop
-    while (!glfwWindowShouldClose(window)) {
+    while (!glfwWindowShouldClose(window))
+    {
         // Clear the rendering window
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         setViewport(window);
