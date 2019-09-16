@@ -17,6 +17,14 @@ inline bool approx(const Vector3f& lhs, const Vector3f& rhs)
 
 }
 
+vector<Vector3f> q(const vector< Vector3f >& P, float t) {
+	vector<Vector3f> q;
+	// For each control point...
+	// const float x = t.x();
+	// const float y = t.y();
+	// const float z = t.z();
+
+}
 
 Curve evalBezier(const vector< Vector3f >& P, unsigned steps)
 {
