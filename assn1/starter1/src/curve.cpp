@@ -18,7 +18,7 @@ namespace
 
 }
 
-float q_i(const vector< Vector3f > &P, const int i, const float t)
+float v_i(const vector< Vector3f > &P, int i, float t)
 {
     // P MUST BE OF SIZE 4!
     return (pow(1 - t, 3) * P[0][i] +
@@ -27,10 +27,24 @@ float q_i(const vector< Vector3f > &P, const int i, const float t)
             pow(t, 3) * P[3][i]);
 }
 
-Vector3f q(const vector< Vector3f > &P, const float t)
+Vector3f v(const vector< Vector3f > &P, float t)
 {
-    Vector3f q(q_i(P, 0, t), q_i(P, 1, t), q_i(P, 2, t));
-    return q;
+    return Vector3f(v_i(P, 0, t), v_i(P, 1, t), v_i(P, 2, t));
+}
+
+float t_i(const vector< Vector3f > &P, int i, float t)
+{
+    // P MUST BE OF SIZE 4!
+    float q_prime = ((-3 * pow(1 - t, 2)) * P[0][i] +
+                     (3 * pow(1 - t, 2) - 6 * t * (1 - t)) * P[1][i] +
+                     (6 * t * (1 - t) - 3 * pow(t, 2)) * P[2][i] +
+                     pow(3 * t, 2) * P[3][i]);
+    return q_prime;
+}
+
+Vector3f t(const vector< Vector3f > &P, float t)
+{
+    return Vector3f(t_i(P, 0, t), t_i(P, 1, t), t_i(P, 2, t)).normalized();
 }
 
 Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
@@ -61,20 +75,28 @@ Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
 
     Curve bezier_curve;
 
+    // Required for the recursive update equation.
+    vector<Vector3f> b_vectors;
+
     // Compute the cubic Bezier curve for these four points.
     // Loop through the # steps required.
     for (unsigned i = 0; i <= steps; ++i)
     {
+        // cout << "size of bvectors: " << b_vectors.size() << endl;
+        float increment = float(i) / steps;
+        cout << "iteration " << increment << endl;
         // 1) Calculate vertex (q(t)).
-        const Vector3f V = q(P, float(i) / steps);
+        Vector3f V = v(P, increment);
         // 2) Calculate tangent.
-        Vector3f T;
+        Vector3f T = t(P, increment);
         // 3) Calculate normal.
-        Vector3f N;
+        Vector3f B_i_minus_one = (b_vectors.size() == 0) ? Vector3f(T[0], T[1] + 3.14159265, T[2]).normalized() : b_vectors[i - 1];
+        Vector3f N = Vector3f::cross(B_i_minus_one, T).normalized();
         // 4) Calculate binormal.
-        Vector3f B;
+        Vector3f B = Vector3f::cross(T, N).normalized();
         // Generate CurvePoint from data.
-        const struct CurvePoint point = {V, T, N, B};
+        struct CurvePoint point = {V, T, N, B};
+        b_vectors.push_back(B);
         bezier_curve.push_back(point);
     }
 
