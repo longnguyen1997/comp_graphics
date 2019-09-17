@@ -82,15 +82,17 @@ Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
     // Loop through the # steps required.
     for (unsigned i = 0; i <= steps; ++i)
     {
-        // cout << "size of bvectors: " << b_vectors.size() << endl;
         float increment = float(i) / steps;
-        cout << "iteration " << increment << endl;
         // 1) Calculate vertex (q(t)).
         Vector3f V = v(P, increment);
         // 2) Calculate tangent.
         Vector3f T = t(P, increment);
-        // 3) Calculate normal.
-        Vector3f B_i_minus_one = (b_vectors.size() == 0) ? Vector3f(T[0], T[1] + 3.14159265, T[2]).normalized() : b_vectors[i - 1];
+        // 3) Calculate normal. Arbitrary B_0.
+        Vector3f B_i_minus_one = (b_vectors.size() == 0) ? Vector3f(
+                                     V[0] * 3.1415,
+                                     V[1] + 3.14159265,
+                                     T[2] - 0.17123
+                                 ).normalized() : b_vectors[i - 1];
         Vector3f N = Vector3f::cross(B_i_minus_one, T).normalized();
         // 4) Calculate binormal.
         Vector3f B = Vector3f::cross(T, N).normalized();
@@ -100,17 +102,16 @@ Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
         bezier_curve.push_back(point);
     }
 
-    cerr << "\t>>> evalBezier has been called with the following input:" << endl;
+    cerr << "\t>>> evalBezier has been called with the input below." << endl;
 
-    cerr << "\t>>> Control points (type vector< Vector3f >): " << endl;
+    cerr << "\t\t>>> Control points (vector<Vector3f>): " << endl;
     for (int i = 0; i < (int)P.size(); ++i)
     {
-        cerr << "\t>>> " << P[i] << endl;
+        cerr << "\t\t\t>>> " << P[i] << endl;
     }
 
-    cerr << "\t>>> Steps (type steps): " << steps << endl;
+    cerr << "\t\t>>> Number of steps: " << steps << endl;
 
-    // Right now this will just return this empty curve.
     return bezier_curve;
 }
 
