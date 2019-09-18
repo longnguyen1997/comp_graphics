@@ -18,6 +18,24 @@ namespace
 
 }
 
+const Matrix4f b_spline_basis = Matrix4f(
+                                    1.0f, 4.0f, 1.0f, 0.0f,
+                                    -3.0f, 0.0f, 3.0f, 0.0f,
+                                    3.0f, -6.0f, 3.0f, 0.0f,
+                                    -1.0f, 3.0f, -3.0f, 1.0f
+                                    ).transposed() * (1.0 / 6.0);
+
+const Matrix4f b_spline_inverse = b_spline_basis.inverse();
+
+const Matrix4f bezier_basis = Matrix4f(
+                                  1.0f, -3.0f, 3.0f, -1.0f,
+                                  0.0f, 3.0f, -6.0f, 3.0f,
+                                  0.0f, 0.0f, 3.0f, -3.0f,
+                                  0.0f, 0.0f, 0.0f, 1.0f
+                              );
+
+const Matrix4f bezier_inverse = bezier_basis.inverse();
+
 float v_i(const vector< Vector3f > &P, int i, float t)
 {
     // P MUST BE OF SIZE 4!
@@ -91,7 +109,7 @@ Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
         Vector3f B_i_minus_one = (b_vectors.size() == 0) ? Vector3f(
                                      V[0] * 3.1415,
                                      V[1] + 3.14159265,
-                                     T[2] - 0.17123
+                                     T[2] - 0.17123 - c_pi
                                  ).normalized() : b_vectors[i - 1];
         Vector3f N = Vector3f::cross(B_i_minus_one, T).normalized();
         // 4) Calculate binormal.
@@ -137,11 +155,47 @@ Curve evalBspline(const vector< Vector3f > &P, unsigned steps)
         cerr << "\t>>> " << P[i] << endl;
     }
 
+    Curve b_spline;
+
+    int piece = 0;
+    // Deal with groups of 4 at a time.
+    while (piece < P.size() - 3)
+    {
+        cout << piece << endl;
+        vector<Vector3f> G_vector = vector<Vector3f>(P.begin() + piece,
+                                    P.begin() + piece + 4);
+        assert(G_vector.size() == 4);
+        Matrix4f G(Vector4f(G_vector[0], 0),
+                   Vector4f(G_vector[1], 0),
+                   Vector4f(G_vector[2], 0),
+                   Vector4f(G_vector[3], 0)
+                  );
+        // Convert to the Bernstein basis for bezier curves.
+        Matrix4f basis_change_P = G * b_spline_basis * bezier_inverse;
+        vector<Vector3f> P_converted
+        {
+            basis_change_P.getCol(0).xyz(),
+            basis_change_P.getCol(1).xyz(),
+            basis_change_P.getCol(2).xyz(),
+            basis_change_P.getCol(3).xyz()
+        };
+        Curve portion = evalBezier(P_converted, steps);
+        // Uncomment to print debug.
+        /*
+        for (int i = 0; i < portion.size(); i++) {
+            cout<<portion[i].V<<' ';
+        }
+        cout<<endl;
+        */
+        for (CurvePoint p : portion) b_spline.push_back(p);
+        piece += 1;
+    }
+
     cerr << "\t>>> Steps (type steps): " << steps << endl;
     cerr << "\t>>> Returning empty curve." << endl;
 
     // Return an empty curve right now.
-    return Curve();
+    return b_spline;
 }
 
 Curve evalCircle(float radius, unsigned steps)
