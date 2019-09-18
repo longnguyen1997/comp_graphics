@@ -65,6 +65,13 @@ Vector3f t(const vector< Vector3f > &P, float t)
     return Vector3f(t_i(P, 0, t), t_i(P, 1, t), t_i(P, 2, t)).normalized();
 }
 
+// Required for the recursive update equation.
+vector<Vector3f> b_vectors{Vector3f(
+                                   243242 * 3.1415,
+                                   2.3284 + 3.14159265,
+                                   5 * 2.7123 - 0.17123 * c_pi
+                               ).normalized()};
+
 Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
 {
     // Check
@@ -94,13 +101,6 @@ Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
     // be defined at points where this does not hold.
 
     Curve bezier_curve;
-
-    // Required for the recursive update equation.
-    vector<Vector3f> b_vectors{Vector3f(
-                                   243242 * 3.1415,
-                                   2.3284 + 3.14159265,
-                                   5 * 2.7123 - 0.17123 * c_pi
-                               ).normalized()};
 
     // Compute the cubic Bezier curve for each section of four points piecewise.
     int section = 0;
