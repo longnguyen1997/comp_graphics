@@ -99,24 +99,36 @@ Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
     int section = 0;
     while (section < P.size() - 3)
     {
-        float increment = float(i) / steps;
-        // 1) Calculate vertex (q(t)).
-        Vector3f V = v(P, increment);
-        // 2) Calculate tangent.
-        Vector3f T = t(P, increment);
-        // 3) Calculate normal. Arbitrary B_0.
-        Vector3f B_i_minus_one = (b_vectors.size() == 0) ? Vector3f(
-                                     V[0] * 3.1415,
-                                     V[1] + 3.14159265,
-                                     T[2] - 0.17123 - c_pi
-                                 ).normalized() : b_vectors[i - 1];
-        Vector3f N = Vector3f::cross(B_i_minus_one, T).normalized();
-        // 4) Calculate binormal.
-        Vector3f B = Vector3f::cross(T, N).normalized();
-        // Generate CurvePoint from data.
-        struct CurvePoint point = {V, T, N, B};
-        b_vectors.push_back(B);
-        bezier_curve.push_back(point);
+        // Required for the recursive update equation.
+        vector<Vector3f> b_vectors;
+        const vector<Vector3f> P_piece = vector<Vector3f>(
+                                             P.begin() + section,
+                                             P.begin() + section + 4
+                                         );
+        assert(P_piece.size() == 4);
+        // Loop through the # steps required.
+        for (unsigned i = 0; i <= steps; ++i)
+        {
+            float increment = float(i) / steps;
+            // 1) Calculate vertex (q(t)).
+            Vector3f V = v(P_piece, increment);
+            // 2) Calculate tangent.
+            Vector3f T = t(P_piece, increment);
+            // 3) Calculate normal. Arbitrary B_0.
+            Vector3f B_i_minus_one = (b_vectors.size() == 0) ? Vector3f(
+                                         V[0] * 3.1415,
+                                         V[1] + 3.14159265,
+                                         T[2] - 0.17123 * c_pi
+                                     ).normalized() : b_vectors[i - 1];
+            Vector3f N = Vector3f::cross(B_i_minus_one, T).normalized();
+            // 4) Calculate binormal.
+            Vector3f B = Vector3f::cross(T, N).normalized();
+            // Generate CurvePoint from data.
+            struct CurvePoint point = {V, T, N, B};
+            b_vectors.push_back(B);
+            bezier_curve.push_back(point);
+        }
+        section += 3;
     }
 
     cerr << "\t>>> evalBezier has been called with the input below." << endl;
