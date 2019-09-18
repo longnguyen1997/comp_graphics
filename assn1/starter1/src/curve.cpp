@@ -74,6 +74,8 @@ Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
         exit(0);
     }
 
+    cout << "evalBezier called!" << endl;
+
     // TODO:
     // You should implement this function so that it returns a Curve
     // (e.g., a vector< CurvePoint >).  The variable "steps" tells you
@@ -93,12 +95,9 @@ Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
 
     Curve bezier_curve;
 
-    // Required for the recursive update equation.
-    vector<Vector3f> b_vectors;
-
-    // Compute the cubic Bezier curve for these four points.
-    // Loop through the # steps required.
-    for (unsigned i = 0; i <= steps; ++i)
+    // Compute the cubic Bezier curve for each section of four points piecewise.
+    int section = 0;
+    while (section < P.size() - 3)
     {
         float increment = float(i) / steps;
         // 1) Calculate vertex (q(t)).
