@@ -56,7 +56,7 @@ float t_i(const vector< Vector3f > &P, int i, float t)
     float q_prime = ((-3 * pow(1 - t, 2)) * P[0][i] +
                      (3 * pow(1 - t, 2) - 6 * t * (1 - t)) * P[1][i] +
                      (6 * t * (1 - t) - 3 * pow(t, 2)) * P[2][i] +
-                     pow(3 * t, 2) * P[3][i]);
+                     (3 * pow(t, 2)) * P[3][i]);
     return q_prime;
 }
 
@@ -95,12 +95,18 @@ Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
 
     Curve bezier_curve;
 
+    // Required for the recursive update equation.
+    vector<Vector3f> b_vectors{Vector3f(
+                                   243242 * 3.1415,
+                                   2.3284 + 3.14159265,
+                                   5 * 2.7123 - 0.17123 * c_pi
+                               ).normalized()};
+
     // Compute the cubic Bezier curve for each section of four points piecewise.
     int section = 0;
     while (section < P.size() - 3)
     {
-        // Required for the recursive update equation.
-        vector<Vector3f> b_vectors;
+
         const vector<Vector3f> P_piece = vector<Vector3f>(
                                              P.begin() + section,
                                              P.begin() + section + 4
@@ -109,17 +115,18 @@ Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
         // Loop through the # steps required.
         for (unsigned i = 0; i <= steps; ++i)
         {
+            if (i == steps && section < P.size() - 4)
+            {
+                cout << "Not last piece in Bezier curve, skipping this point." << endl;
+                continue;
+            }
             float increment = float(i) / steps;
             // 1) Calculate vertex (q(t)).
             Vector3f V = v(P_piece, increment);
             // 2) Calculate tangent.
             Vector3f T = t(P_piece, increment);
             // 3) Calculate normal. Arbitrary B_0.
-            Vector3f B_i_minus_one = (b_vectors.size() == 0) ? Vector3f(
-                                         V[0] * 3.1415,
-                                         V[1] + 3.14159265,
-                                         T[2] - 0.17123 * c_pi
-                                     ).normalized() : b_vectors[i - 1];
+            Vector3f B_i_minus_one = b_vectors.back();
             Vector3f N = Vector3f::cross(B_i_minus_one, T).normalized();
             // 4) Calculate binormal.
             Vector3f B = Vector3f::cross(T, N).normalized();
@@ -172,15 +179,17 @@ Curve evalBspline(const vector< Vector3f > &P, unsigned steps)
     // Deal with groups of 4 at a time.
     while (piece < P.size() - 3)
     {
-        cout << piece << endl;
-        vector<Vector3f> G_vector = vector<Vector3f>(P.begin() + piece,
-                                    P.begin() + piece + 4);
+        vector<Vector3f> G_vector = vector<Vector3f>(
+                                        P.begin() + piece,
+                                        P.begin() + piece + 4
+                                    );
         assert(G_vector.size() == 4);
-        Matrix4f G(Vector4f(G_vector[0], 0),
-                   Vector4f(G_vector[1], 0),
-                   Vector4f(G_vector[2], 0),
-                   Vector4f(G_vector[3], 0)
-                  );
+        Matrix4f G(
+            Vector4f(G_vector[0], 0),
+            Vector4f(G_vector[1], 0),
+            Vector4f(G_vector[2], 0),
+            Vector4f(G_vector[3], 0)
+        );
         // Convert to the Bernstein basis for bezier curves.
         Matrix4f basis_change_P = G * b_spline_basis * bezier_inverse;
         vector<Vector3f> P_converted
@@ -198,7 +207,8 @@ Curve evalBspline(const vector< Vector3f > &P, unsigned steps)
         }
         cout<<endl;
         */
-        for (CurvePoint p : portion) b_spline.push_back(p);
+        if (piece == P.size() - 4) for (CurvePoint p : portion) b_spline.push_back(p);
+        else for (int i = 0; i < portion.size() - 1; i++) b_spline.push_back(portion[i]);
         piece += 1;
     }
 
