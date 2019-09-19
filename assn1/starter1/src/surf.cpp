@@ -50,6 +50,8 @@ Surface makeSurfRev(const Curve &profile, unsigned steps)
 
     // TODO: Here you should build the surface.  See surf.h for details.
 
+    // 1) Generate duplicates of the profile curve around the y-axis.
+
     cerr << "\t>>> makeSurfRev called (but not implemented).\n\t>>> Returning empty surface." << endl;
  
     return surface;
