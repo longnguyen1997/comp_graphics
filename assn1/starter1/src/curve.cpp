@@ -67,10 +67,22 @@ Vector3f t(const vector< Vector3f > &P, float t)
 
 // Required for the recursive update equation.
 vector<Vector3f> b_vectors{Vector3f(
-                                   243242 * 3.1415,
-                                   2.3284 + 3.14159265,
-                                   5 * 2.7123 - 0.17123 * c_pi
-                               ).normalized()};
+        243242 * 3.1415,
+        2.3284 + 3.14159265,
+        5 * 2.7123 - 0.17123 * c_pi
+    ).normalized()};
+
+void reset_b_vectors()
+{
+    b_vectors.clear();
+    b_vectors.push_back(Vector3f(
+                            243242 * 3.1415,
+                            2.3284 + 3.14159265,
+                            5 * 2.7123 - 0.17123 * c_pi
+                        ).normalized());
+}
+
+bool is_drawing_Bspline = false;
 
 Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
 {
@@ -101,6 +113,10 @@ Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
     // be defined at points where this does not hold.
 
     Curve bezier_curve;
+    // Sanity check. If the previous curve drawn through
+    // evalBezier was a B-spline, we reset b_vectors
+    // so that any existing B_i doesn't interfere.
+    if (!is_drawing_Bspline) reset_b_vectors();
 
     // Compute the cubic Bezier curve for each section of four points piecewise.
     int section = 0;
@@ -174,6 +190,7 @@ Curve evalBspline(const vector< Vector3f > &P, unsigned steps)
     }
 
     Curve b_spline;
+    is_drawing_Bspline = true;
 
     int piece = 0;
     // Deal with groups of 4 at a time.
@@ -213,7 +230,9 @@ Curve evalBspline(const vector< Vector3f > &P, unsigned steps)
     }
 
     cerr << "\t>>> Steps (type steps): " << steps << endl;
-    cerr << "\t>>> Returning empty curve." << endl;
+
+    is_drawing_Bspline = false;
+    reset_b_vectors();
 
     // Return an empty curve right now.
     return b_spline;
