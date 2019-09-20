@@ -82,7 +82,6 @@ Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
 
     cout << "evalBezier called!" << endl;
 
-    // TODO:
     // You should implement this function so that it returns a Curve
     // (e.g., a vector< CurvePoint >).  The variable "steps" tells you
     // the number of points to generate on each piece of the spline.
@@ -185,7 +184,6 @@ Curve evalBspline(const vector< Vector3f > &P, unsigned steps)
         exit(0);
     }
 
-    // TODO:
     // It is suggested that you implement this function by changing
     // basis from B-spline to Bezier.  That way, you can just call
     // your evalBezier function.
