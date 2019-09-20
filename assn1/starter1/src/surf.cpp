@@ -1,5 +1,6 @@
 #include "surf.h"
 #include "vertexrecorder.h"
+#include <cassert>
 using namespace std;
 
 namespace
@@ -71,20 +72,52 @@ Surface makeSurfRev(const Curve &profile, unsigned steps)
 
     // TODO: Here you should build the surface.  See surf.h for details.
 
+    vector<Vector3f> VV;
+    vector<Vector3f> VN;
+    vector<Tup3u> VF;
+
+    // Copy initial profile.
+    for (CurvePoint p : profile)
+    {
+        VV.push_back(p.V);
+        VN.push_back(-p.N);
+    }
+
+    const int num_points = profile.size();
     // 1) Generate duplicates of the profile curve around the y-axis.
     cout << "Generating rotated duplicates on the curve profile." << endl;
     // Duplicate points for steps around the rotation.
-    for (unsigned s = 1; s < steps; ++s)
+    // Start at step 1, since 0 is the profile curve.
+    for (unsigned s = 1; s <= steps; ++s)
     {
         const float t = two_pi * float(s) / steps;
+        vector<Vector3f> rotated_Vs;
+        vector<Vector3f> rotated_Ns;
         for (CurvePoint p : profile)
         {
             const Vector3f rotated_V = get_vertex_rotation_matrix(t) * p.V;
-            const Vector3f rotated_N = inverse_transpose_matrix(t) * p.N;
+            const Vector3f rotated_N = (inverse_transpose_matrix(t) * p.N).normalized();
+            rotated_Vs.push_back(rotated_V);
+            rotated_Ns.push_back(rotated_N);
         }
+        // Link the previous profile copy to the newly generated one.
+        for (int i = VV.size() - 1; i > VV.size() - num_points; --i)
+        {
+            // For each point in the previous profile copy,
+            VF.push_back(Tup3u(i, i + num_points, i + num_points - 1));
+            VF.push_back(Tup3u(i, i + num_points - 1, i - 1));
+        }
+        for (Vector3f V : rotated_Vs) VV.push_back(V);
+        for (Vector3f N : rotated_Ns) VN.push_back(-N);
     }
-
-    return surface;
+    // Link the last copy to the initial profile curve.
+    for (int i = 1; i < num_points; ++i) {
+        VF.push_back(Tup3u(VV.size() - i, num_points - 1, num_points - 2));
+        VF.push_back(Tup3u(VV.size() - i, num_points - 2, VV.size() - i - 1));
+    }
+    // assert(VN.size() == num_points * steps);
+    // assert(VV.size() == num_points * steps);
+    return Surface{VV, VN, VF};
 }
 
 Surface makeGenCyl(const Curve &profile, const Curve &sweep )

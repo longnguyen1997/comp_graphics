@@ -66,23 +66,10 @@ Vector3f t(const vector< Vector3f > &P, float t)
 }
 
 // Required for the recursive update equation.
-vector<Vector3f> b_vectors{Vector3f(
-        243242 * 3.1415,
-        2.3284 + 3.14159265,
-        5 * 2.7123 - 0.17123 * c_pi
-    ).normalized()};
-
-void reset_b_vectors()
-{
-    b_vectors.clear();
-    b_vectors.push_back(Vector3f(
-                            243242 * 3.1415,
-                            2.3284 + 3.14159265,
-                            5 * 2.7123 - 0.17123 * c_pi
-                        ).normalized());
-}
-
-bool is_drawing_Bspline = false;
+Vector3f b(
+    0.0f,
+    0.0f,
+    1.0f);
 
 Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
 {
@@ -113,10 +100,6 @@ Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
     // be defined at points where this does not hold.
 
     Curve bezier_curve;
-    // Sanity check. If the previous curve drawn through
-    // evalBezier was a B-spline, we reset b_vectors
-    // so that any existing B_i doesn't interfere.
-    if (!is_drawing_Bspline) reset_b_vectors();
 
     // Compute the cubic Bezier curve for each section of four points piecewise.
     int section = 0;
@@ -142,13 +125,39 @@ Curve evalBezier(const vector< Vector3f > &P, unsigned steps)
             // 2) Calculate tangent.
             Vector3f T = t(P_piece, increment);
             // 3) Calculate normal. Arbitrary B_0.
-            Vector3f B_i_minus_one = b_vectors.back();
+            Vector3f B_i_minus_one;
+            try
+            {
+                B_i_minus_one = b; // {0, 0, 1} in the z direction.
+                assert(Vector3f(0.0f, 0.0f, 0.0f) != Vector3f::cross(T, B_i_minus_one));
+            }
+            catch (...)
+            {
+                // If z direction is parallel, try the other directions.
+                try
+                {
+                    B_i_minus_one = Vector3f(1.0f, 0.0f, 0.0f); // {1, 0, 0}
+                    assert(Vector3f(0.0f, 0.0f, 0.0f) != Vector3f::cross(T, B_i_minus_one));
+                }
+                catch (...)
+                {
+                    try
+                    {
+                        B_i_minus_one = Vector3f(0.0f, 1.0f, 0.0f); // {0, 1, 0}
+                        assert(Vector3f(0.0f, 0.0f, 0.0f) != Vector3f::cross(T, B_i_minus_one));
+                    }
+                    catch (...)
+                    {
+                        cout << "Could not find a nonparallel B_0. Please confirm." << endl;
+                    }
+                }
+            }
             Vector3f N = Vector3f::cross(B_i_minus_one, T).normalized();
             // 4) Calculate binormal.
             Vector3f B = Vector3f::cross(T, N).normalized();
             // Generate CurvePoint from data.
             struct CurvePoint point = {V, T, N, B};
-            b_vectors.push_back(B);
+            b = B;
             bezier_curve.push_back(point);
         }
         section += 3;
@@ -190,7 +199,6 @@ Curve evalBspline(const vector< Vector3f > &P, unsigned steps)
     }
 
     Curve b_spline;
-    is_drawing_Bspline = true;
 
     int piece = 0;
     // Deal with groups of 4 at a time.
@@ -231,10 +239,9 @@ Curve evalBspline(const vector< Vector3f > &P, unsigned steps)
 
     cerr << "\t>>> Steps (type steps): " << steps << endl;
 
-    is_drawing_Bspline = false;
-    reset_b_vectors();
-
-    // Return an empty curve right now.
+    b = Vector3f(0.0f,
+                 0.0f,
+                 1.0f);
     return b_spline;
 }
 
