@@ -28,6 +28,8 @@ None.
 
 6) General comments?
 
+My artifacts are in the swp folder.
+
 Please encourage people to search through source symbols more. I almost
 implemented all the math and matrix ops myself before going through
 the symbols in the project and seeing all the included methods.
