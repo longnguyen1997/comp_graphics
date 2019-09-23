@@ -97,14 +97,13 @@ void SkeletalModel::loadSkeleton(const char *filename)
     map<int, vector<Joint *>> adjacencyList;
     int jointIndex = 0;
     float x, y, z;
-    int parIndex;
-    while (skeleton >> x >> y >> z >> parIndex)
+    int parentIndex;
+    while (skeleton >> x >> y >> z >> parentIndex)
     {
         Joint *joint = new Joint;
         jointsByIndex[jointIndex] = joint;
-        adjacencyList[parIndex].push_back(joint);
+        adjacencyList[parentIndex].push_back(joint);
         jointIndex += 1;
-        Vector4f T(x, y, z, 1.0f);
         /*
         See
         https://en.wikipedia.org/wiki/Translation_(geometry)#Matrix_representation
@@ -153,6 +152,40 @@ void SkeletalModel::drawJoints(const Camera &camera)
     traverseAndDrawJoint(camera, m_rootJoint);
 }
 
+void SkeletalModel::traverseAndDrawBones(
+    const Camera &camera,
+    const Joint *joint
+)
+{
+    // Push this joint's transformation.
+    m_matrixStack.push(joint->transform);
+    for (Joint *childJoint : joint->children)
+    {
+
+        Matrix4f parentTransformation = m_matrixStack.top();
+
+        Vector3f childRelativePos = childJoint->transform.getCol(3).xyz();
+        float cylinderLength = childRelativePos.abs();
+
+        // Derive the rotation matrix.
+        float a = -childRelativePos[0] / childRelativePos[2];
+        Vector3f x = Vector3f(1.0, 0.0, a).normalized();
+        Vector3f y = childRelativePos.normalized();
+        Vector3f z = Vector3f::cross(x, y).normalized();
+        Matrix3f direction = Matrix3f(x, y, z);
+        Matrix3f m = parentTransformation.getSubmatrix3x3(0, 0);
+        parentTransformation.setSubmatrix3x3(0, 0, m * direction);
+
+        // Render the cylindrical bone.
+        camera.SetUniforms(program, parentTransformation);
+        drawCylinder(6, 0.02f, cylinderLength);
+        // Recurse on the child in DFS fashion.
+        traverseAndDrawBones(camera, childJoint);
+    }
+    // Pop the transformation.
+    m_matrixStack.pop();
+}
+
 void SkeletalModel::drawSkeleton(const Camera &camera)
 {
     // Draw cylinders between the joints. You will need to add a recursive
@@ -160,13 +193,7 @@ void SkeletalModel::drawSkeleton(const Camera &camera)
     //
     // We recommend using drawCylinder(6, 0.02f, <height>);
     // to draw a cylinder of reasonable diameter.
-
-    // you can use the stack with push/pop like this
-    // m_matrixStack.push(Matrix4f::translation(+0.6f, +0.5f, -0.5f))
-    // camera.SetUniforms(program, m_matrixStack.top());
-    // drawCylinder(6, 0.02f, 0.2f);
-    // callChildFunction();
-    // m_matrixStack.pop();
+    traverseAndDrawBones(camera, m_rootJoint);
 }
 
 void SkeletalModel::setJointTransform(int jointIndex, float rX, float rY, float rZ)

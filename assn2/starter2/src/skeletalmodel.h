@@ -24,22 +24,23 @@ public:
     ~SkeletalModel();
     // Already-implemented utility functions that call the code you will write.
     void load(const char *skeletonFile, const char *meshFile, const char *attachmentsFile);
-    void draw(const Camera& camera, bool drawSkeleton);
+    void draw(const Camera &camera, bool drawSkeleton);
     void updateShadingUniforms();
 
     // Part 1: Understanding Hierarchical Modeling
 
     // 1.1. Implement method to load a skeleton.
     // This method should compute m_rootJoint and populate m_joints.
-    void loadSkeleton(const char* filename);
+    void loadSkeleton(const char *filename);
 
     // 1.1. Implement this method with a recursive helper to draw a sphere at each joint.
-    void drawJoints(const Camera& camera);
+    void drawJoints(const Camera &camera);
     // Helper function for 1.1.
-    void traverseAndDrawJoint(const Camera& camera, const Joint* joint);
+    void traverseAndDrawJoint(const Camera &camera, const Joint *joint);
 
     // 1.2. Implement this method a recursive helper to draw a box between each pair of joints
-    void drawSkeleton(const Camera& camera);
+    void drawSkeleton(const Camera &camera);
+    void traverseAndDrawBones(const Camera &camera, const Joint *joint);
 
     // 1.3. Implement this method to handle changes to your skeleton given
     // changes in the slider values
@@ -66,9 +67,9 @@ public:
 
 private:
     // pointer to the root joint
-    Joint* m_rootJoint;
+    Joint *m_rootJoint;
     // the list of joints.
-    std::vector< Joint* > m_joints;
+    std::vector< Joint * > m_joints;
     Mesh m_mesh;
     MatrixStack m_matrixStack;
     GLuint program;
