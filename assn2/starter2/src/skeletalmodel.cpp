@@ -3,6 +3,7 @@
 
 #include "starter2_util.h"
 #include "vertexrecorder.h"
+#include <iostream>
 
 using namespace std;
 
@@ -85,6 +86,7 @@ void SkeletalModel::updateShadingUniforms() {
 void SkeletalModel::loadSkeleton(const char* filename)
 {
     // Load the skeleton from file here.
+    ifstream inFile("filename", ios::in);
 }
 
 void SkeletalModel::drawJoints(const Camera& camera)
