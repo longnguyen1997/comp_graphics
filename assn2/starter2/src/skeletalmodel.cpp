@@ -104,9 +104,16 @@ void SkeletalModel::loadSkeleton(const char *filename)
         jointsByIndex[jointIndex] = joint;
         adjacencyList[parIndex].push_back(joint);
         jointIndex += 1;
+        Vector4f T(x, y, z, 1.0f);
+        /*
+        See
+        https://en.wikipedia.org/wiki/Translation_(geometry)#Matrix_representation
+        for an explanation about translation matrices.
+        */
+        joint->transform = Matrix4f::translation(x, y, z);
     }
     m_rootJoint = adjacencyList[-1][0];
-    cout <<(m_rootJoint != NULL)<<endl;
+    assert(m_rootJoint != NULL);
     for (int j = 0; j < jointIndex; ++j)
     {
         // Set the children of each joint.
@@ -114,7 +121,19 @@ void SkeletalModel::loadSkeleton(const char *filename)
         // Update the list of joints.
         m_joints.push_back(jointsByIndex[j]);
     }
-    cout<<(m_joints.size() == jointIndex)<<endl;
+    assert(m_joints.size() == jointIndex);
+}
+
+void SkeletalModel::traverseAndDrawJoint(const Camera &camera, const Joint *joint)
+{
+    m_matrixStack.push(joint->transform);
+    camera.SetUniforms(program, m_matrixStack.top());
+    drawSphere(0.025f, 12, 12);
+    for (const Joint *j : joint->children)
+    {
+        traverseAndDrawJoint(camera, j);
+    }
+    m_matrixStack.pop();
 }
 
 void SkeletalModel::drawJoints(const Camera &camera)
@@ -130,16 +149,8 @@ void SkeletalModel::drawJoints(const Camera &camera)
     // use stack.pop() to revert the stack to the original
     // state.
 
-    // this is just for illustration:
-
-    // translate from top of stack, but doesn't push, since that's not
-    // implemented yet.
-    Matrix4f M = m_matrixStack.top() * Matrix4f::translation(+0.5f, +0.5f, -0.5f);
-    // update transformation uniforms
-    camera.SetUniforms(program, M);
-    // draw
-    drawSphere(0.025f, 12, 12);
-    // didn't push to stack, so no pop() needed
+    // Start at the root and draw everything else.
+    traverseAndDrawJoint(camera, m_rootJoint);
 }
 
 void SkeletalModel::drawSkeleton(const Camera &camera)
