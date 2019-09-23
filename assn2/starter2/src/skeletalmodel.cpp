@@ -4,20 +4,25 @@
 #include "starter2_util.h"
 #include "vertexrecorder.h"
 #include <iostream>
+#include <map>
 
 using namespace std;
 
-SkeletalModel::SkeletalModel() {
+SkeletalModel::SkeletalModel()
+{
     program = compileProgram(c_vertexshader, c_fragmentshader_light);
-    if (!program) {
+    if (!program)
+    {
         printf("Cannot compile program\n");
         assert(false);
     }
 }
 
-SkeletalModel::~SkeletalModel() {
+SkeletalModel::~SkeletalModel()
+{
     // destructor will release memory when SkeletalModel is deleted
-    while (m_joints.size()) {
+    while (m_joints.size())
+    {
         delete m_joints.back();
         m_joints.pop_back();
     }
@@ -36,7 +41,7 @@ void SkeletalModel::load(const char *skeletonFile, const char *meshFile, const c
     updateCurrentJointToWorldTransforms();
 }
 
-void SkeletalModel::draw(const Camera& camera, bool skeletonVisible)
+void SkeletalModel::draw(const Camera &camera, bool skeletonVisible)
 {
     // draw() gets called whenever a redraw is required
     // (after an update() occurs, when the camera moves, the window is resized, etc)
@@ -61,7 +66,8 @@ void SkeletalModel::draw(const Camera& camera, bool skeletonVisible)
     glUseProgram(0);
 }
 
-void SkeletalModel::updateShadingUniforms() {
+void SkeletalModel::updateShadingUniforms()
+{
     // UPDATE MATERIAL UNIFORMS
     GLfloat diffColor[] = { 0.4f, 0.4f, 0.4f, 1 };
     GLfloat specColor[] = { 0.9f, 0.9f, 0.9f, 1 };
@@ -83,13 +89,35 @@ void SkeletalModel::updateShadingUniforms() {
     glUniform4fv(loc, 1, lightDiff);
 }
 
-void SkeletalModel::loadSkeleton(const char* filename)
+void SkeletalModel::loadSkeleton(const char *filename)
 {
     // Load the skeleton from file here.
-    ifstream inFile("filename", ios::in);
+    ifstream skeleton(filename, ios::in);
+    map<int, Joint *> jointsByIndex;
+    map<int, vector<Joint *>> adjacencyList;
+    int jointIndex = 0;
+    float x, y, z;
+    int parIndex;
+    while (skeleton >> x >> y >> z >> parIndex)
+    {
+        Joint *joint = new Joint;
+        jointsByIndex[jointIndex] = joint;
+        adjacencyList[parIndex].push_back(joint);
+        jointIndex += 1;
+    }
+    m_rootJoint = adjacencyList[-1][0];
+    cout <<(m_rootJoint != NULL)<<endl;
+    for (int j = 0; j < jointIndex; ++j)
+    {
+        // Set the children of each joint.
+        jointsByIndex[j]->children = adjacencyList[j];
+        // Update the list of joints.
+        m_joints.push_back(jointsByIndex[j]);
+    }
+    cout<<(m_joints.size() == jointIndex)<<endl;
 }
 
-void SkeletalModel::drawJoints(const Camera& camera)
+void SkeletalModel::drawJoints(const Camera &camera)
 {
     // Draw a sphere at each joint. You will need to add a recursive
     // helper function to traverse the joint hierarchy.
@@ -114,9 +142,9 @@ void SkeletalModel::drawJoints(const Camera& camera)
     // didn't push to stack, so no pop() needed
 }
 
-void SkeletalModel::drawSkeleton(const Camera& camera)
+void SkeletalModel::drawSkeleton(const Camera &camera)
 {
-    // Draw cylinders between the joints. You will need to add a recursive 
+    // Draw cylinders between the joints. You will need to add a recursive
     // helper function to traverse the joint hierarchy.
     //
     // We recommend using drawCylinder(6, 0.02f, <height>);
