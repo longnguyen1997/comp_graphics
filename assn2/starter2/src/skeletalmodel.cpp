@@ -216,7 +216,16 @@ void SkeletalModel::computeBindWorldToJointTransforms()
     //
     // This method should update each joint's bindWorldToJointTransform.
     // You will need to add a recursive helper function to traverse the joint hierarchy.
+    m_matrixStack.clear();
+    traverseBindWorldHierarchy(m_rootJoint);
+}
 
+void SkeletalModel::traverseBindWorldHierarchy(Joint *j)
+{
+    m_matrixStack.push(j->transform);
+    j->bindWorldToJointTransform = m_matrixStack.top().inverse();
+    for (Joint *childJoint : j->children) traverseBindWorldHierarchy(childJoint);
+    m_matrixStack.pop();
 }
 
 void SkeletalModel::updateCurrentJointToWorldTransforms()
@@ -229,7 +238,15 @@ void SkeletalModel::updateCurrentJointToWorldTransforms()
     //
     // This method should update each joint's currentJointToWorldTransform.
     // You will need to add a recursive helper function to traverse the joint hierarchy.
+    m_matrixStack.clear();
+    traverseJointToWorldHierarchy(m_rootJoint);
+}
 
+void SkeletalModel::traverseJointToWorldHierarchy(Joint *j) {
+    m_matrixStack.push(j->transform);
+    j->currentJointToWorldTransform = m_matrixStack.top();
+    for (Joint *childJoint : j->children) traverseJointToWorldHierarchy(childJoint);
+    m_matrixStack.pop();
 }
 
 void SkeletalModel::updateMesh()
