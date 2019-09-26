@@ -149,6 +149,7 @@ void SkeletalModel::drawJoints(const Camera &camera)
     // state.
 
     // Start at the root and draw everything else.
+    m_matrixStack.clear();
     traverseAndDrawJoint(camera, m_rootJoint);
 }
 
@@ -193,6 +194,7 @@ void SkeletalModel::drawSkeleton(const Camera &camera)
     //
     // We recommend using drawCylinder(6, 0.02f, <height>);
     // to draw a cylinder of reasonable diameter.
+    m_matrixStack.clear();
     traverseAndDrawBones(camera, m_rootJoint);
 }
 
@@ -242,7 +244,8 @@ void SkeletalModel::updateCurrentJointToWorldTransforms()
     traverseJointToWorldHierarchy(m_rootJoint);
 }
 
-void SkeletalModel::traverseJointToWorldHierarchy(Joint *j) {
+void SkeletalModel::traverseJointToWorldHierarchy(Joint *j)
+{
     m_matrixStack.push(j->transform);
     j->currentJointToWorldTransform = m_matrixStack.top();
     for (Joint *childJoint : j->children) traverseJointToWorldHierarchy(childJoint);
@@ -256,5 +259,17 @@ void SkeletalModel::updateMesh()
     // given the current state of the skeleton.
     // You will need both the bind pose world --> joint transforms.
     // and the current joint --> world transforms.
+
+    for (int i = 0; i < m_mesh.attachments.size(); ++i)
+    {
+        const Vector4f p = Vector4f(m_mesh.bindVertices[i], 1);
+        Vector3f pPrime(0, 0, 0);
+        for (int w = 0; w < m_mesh.attachments[i].size(); ++w)
+        {
+            const Joint *j = m_joints[w + 1];
+            pPrime = pPrime + ((m_mesh.attachments[i][w] * j->currentJointToWorldTransform * j->bindWorldToJointTransform * p).xyz());
+        }
+        m_mesh.currentVertices[i] = pPrime;
+    }
 }
 

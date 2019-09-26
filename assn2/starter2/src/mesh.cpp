@@ -51,7 +51,6 @@ void Mesh::draw()
         meshDraw.record(B, normal);
         meshDraw.record(C, normal);
     }
-    cout << "Loaded vertices and faces for the model mesh." << endl;
     meshDraw.draw();
 }
 
@@ -70,7 +69,6 @@ void Mesh::loadAttachments( const char *filename, int numJoints )
             // EOF, return.
             if (!(attachmentsFile >> w))
             {
-                cout << "Loaded attachment weights." << endl;
                 return;
             }
             weights[j] = w;
