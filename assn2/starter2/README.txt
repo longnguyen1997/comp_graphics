@@ -30,3 +30,4 @@ Please encourage students to look up theoretical knowledge required to complete
 these labs. I always assume that the PDF has all I need, but a lot of details
 aren't clear until I look them up (like the cross product derivation for the
 face normals I mentioned above).
+
