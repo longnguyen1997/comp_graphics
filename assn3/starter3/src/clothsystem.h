@@ -11,13 +11,15 @@ class ClothSystem : public PendulumSystem {
 public:
     ClothSystem();
     int indexOf(int i, int j);
-    int numParticles;
-    std::vector<Vector3f> positions;
-    std::vector<Vector3f> velocities;
+    std::vector<int> directNeighbors(int i, int j);
+    std::vector<int> diagonalNeighbors(int i, int j);
+    std::vector<int> flexNeighbors(int i, int j);
     std::vector<Spring> springsStructural;
     std::vector<Spring> springsShear;
     std::vector<Spring> springsFlexion;
-
+    int numParticles;
+    std::vector<Vector3f> positions;
+    std::vector<Vector3f> velocities;
     // evalF is called by the integrator at least once per time step
     std::vector<Vector3f> evalF(std::vector<Vector3f> state) override;
 

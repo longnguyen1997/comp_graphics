@@ -8,10 +8,12 @@
 class Spring {
 public:
     Spring();
+    Spring(float r);
     void addConnection(int i);
     std::vector<int> getConnections();
 private:
     std::vector<int> connections;
+    float restLen;
 };
 
 class PendulumSystem : public ParticleSystem {

@@ -23,6 +23,10 @@ Spring::Spring() {
     // Any extra logic here.
 }
 
+Spring::Spring(float r) {
+    restLen = r;
+}
+
 void Spring::addConnection(int i) {
     connections.push_back(i);
 }

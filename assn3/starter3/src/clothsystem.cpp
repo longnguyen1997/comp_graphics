@@ -1,10 +1,69 @@
 #include "clothsystem.h"
 #include "camera.h"
 #include "vertexrecorder.h"
-
+#include <iostream>
+using namespace std;
 // your system should at least contain 8x8 particles.
 const int W = 8;
 const int H = 8;
+const float rStruct = 0.5f;
+const float rShear = 0.7f;
+const float rFlex = 1.0f;
+
+vector<int> ClothSystem::directNeighbors(int i, int j) {
+    vector<vector<int>> neighborCoords{{i - 1, j},
+        {i, j - 1},
+        {i, j + 1},
+        {i + 1, j}
+    };
+    vector<int> neighbors;
+    for (vector<int> neighbor : neighborCoords) {
+        const int x = neighbor[0];
+        const int y = neighbor[1];
+        if (x >= 0 && y >= 0 && x < W && y < H) {
+            neighbors.push_back(indexOf(x, y));
+        }
+    }
+    return neighbors;
+}
+
+vector<int> ClothSystem::diagonalNeighbors(int i, int j) {
+    vector<vector<int>> neighborCoords{{i - 1, j - 1},
+        {i + 1, j - 1},
+        {i - 1, j + 1},
+        {i + 1, j + 1}
+    };
+    vector<int> neighbors;
+    for (vector<int> neighbor : neighborCoords) {
+        const int x = neighbor[0];
+        const int y = neighbor[1];
+        if (x >= 0 && y >= 0 && x < W && y < H) {
+            neighbors.push_back(indexOf(x, y));
+        }
+    }
+    return neighbors;
+}
+
+vector<int> ClothSystem::flexNeighbors(int i, int j) {
+    vector<vector<int>> neighborCoords{{i, j - 2},
+        {i, j + 2},
+        {i - 2, j},
+        {i + 2, j}
+    };
+    vector<int> neighbors;
+    for (vector<int> neighbor : neighborCoords) {
+        const int x = neighbor[0];
+        const int y = neighbor[1];
+        if (x >= 0 && y >= 0 && x < W && y < H) {
+            neighbors.push_back(indexOf(x, y));
+        }
+    }
+    return neighbors;
+}
+
+int ClothSystem::indexOf(int i, int j) {
+    return i * W + j;
+}
 
 ClothSystem::ClothSystem() {
     // TODO 5. Initialize m_vVecState with cloth particles.
@@ -21,24 +80,35 @@ ClothSystem::ClothSystem() {
         }
     }
 
-    // Add the springs.
-    for (int i = 0; i < W * H; ++i) {
-        float f = rand_uniform(-0.5f, 0.5f);
-        // Initial point in the spring, fixed.
-        if (i == 0) {
-            springs.push_back(Spring());
-        } else { // For other particles.
-            Spring spring = Spring();
-            // Connect both neighbors.
-            spring.addConnection(i - 1);
-            springs[i - 1].addConnection(i);
-            springs.push_back(spring);
+    // Structural springs.
+    springsStructural = vector<Spring>(W * H, Spring(rStruct));
+    for (int i = 0; i < W; ++i) {
+        for (int j = 0; j < H; ++j) {
+            for (int neighbor : directNeighbors(i, j)) {
+                springsStructural[indexOf(i, j)].addConnection(neighbor);
+            }
         }
     }
-}
 
-int ClothSystem::indexOf(int i, int j) {
-    return i * numParticles + j;
+    // Shear springs.
+    springsShear = vector<Spring>(W * H, Spring(rShear));
+    for (int i = 0; i < W; ++i) {
+        for (int j = 0; j < H; ++j) {
+            for (int neighbor : diagonalNeighbors(i, j)) {
+                springsShear[indexOf(i, j)].addConnection(neighbor);
+            }
+        }
+    }
+
+    // Flexion springs.
+    springsFlexion = vector<Spring>(W * H, Spring(rFlex));
+    for (int i = 0; i < W; ++i) {
+        for (int j = 0; j < H; ++j) {
+            for (int neighbor : flexNeighbors(i, j)) {
+                springsFlexion[indexOf(i, j)].addConnection(neighbor);
+            }
+        }
+    }
 }
 
 std::vector<Vector3f> ClothSystem::evalF(std::vector<Vector3f> state) {
@@ -113,5 +183,31 @@ void ClothSystem::draw(GLProgram &gl) {
     gl.enableLighting(); // reset to default lighting model
     // EXAMPLE END
     */
+
+    gl.disableLighting();
+    gl.updateModelMatrix(Matrix4f::identity());
+    VertexRecorder rec;
+
+    for (unsigned int i = 0; i < positions.size(); ++i) {
+        Vector3f X = positions[i];
+        // Draw ALL springs.
+        vector<Spring> springs{springsStructural[i],
+                               springsShear[i],
+                               springsFlexion[i]
+                              };
+        for (Spring spring : springs) {
+            vector<int> connections = spring.getConnections();
+            for (int c : connections) {
+                Vector3f connection = positions[c];
+                Vector3f diff = connection - X;
+                rec.record(O + X, CLOTH_COLOR);
+                rec.record(O + X + diff, CLOTH_COLOR);
+            }
+        }
+    }
+    glLineWidth(3.0f);
+    rec.draw(GL_LINES);
+    gl.enableLighting();
+
 }
 
