@@ -3,12 +3,22 @@
 #include "vertexrecorder.h"
 #include <iostream>
 using namespace std;
+
 // your system should at least contain 8x8 particles.
 const int W = 8;
 const int H = 8;
 const float rStruct = 0.5f;
 const float rShear = 0.7f;
 const float rFlex = 1.0f;
+
+// Gravity vector (y direction)
+const Vector3f g(0, -9.8, 0);
+// Mass of an object
+const float m = 0.05;
+// Viscous drag constant
+const float kDrag = 0.05;
+// Spring constant
+const float kSpring = 1.5;
 
 vector<int> ClothSystem::directNeighbors(int i, int j) {
     vector<vector<int>> neighborCoords{{i - 1, j},
@@ -81,7 +91,7 @@ ClothSystem::ClothSystem() {
     }
 
     // Structural springs.
-    springsStructural = vector<Spring>(W * H, Spring(rStruct));
+    springsStructural = vector<Spring>(W * H, Spring());
     for (int i = 0; i < W; ++i) {
         for (int j = 0; j < H; ++j) {
             for (int neighbor : directNeighbors(i, j)) {
@@ -91,7 +101,7 @@ ClothSystem::ClothSystem() {
     }
 
     // Shear springs.
-    springsShear = vector<Spring>(W * H, Spring(rShear));
+    springsShear = vector<Spring>(W * H, Spring());
     for (int i = 0; i < W; ++i) {
         for (int j = 0; j < H; ++j) {
             for (int neighbor : diagonalNeighbors(i, j)) {
@@ -101,7 +111,7 @@ ClothSystem::ClothSystem() {
     }
 
     // Flexion springs.
-    springsFlexion = vector<Spring>(W * H, Spring(rFlex));
+    springsFlexion = vector<Spring>(W * H, Spring());
     for (int i = 0; i < W; ++i) {
         for (int j = 0; j < H; ++j) {
             for (int neighbor : flexNeighbors(i, j)) {
@@ -114,12 +124,46 @@ ClothSystem::ClothSystem() {
 std::vector<Vector3f> ClothSystem::evalF(std::vector<Vector3f> state) {
     std::vector<Vector3f> f(state.size());
     // TODO 5. implement evalF
-    // - gravity
-    // - viscous drag
-    // - structural springs
     // - shear springs
     // - flexion springs
-
+    for (unsigned int i = 0; i < positions.size(); ++i) {
+        //  - gravity
+        const Vector3f gravity = m * g;
+        //  - viscous drag
+        const Vector3f viscousDrag = -kDrag * velocities[i];
+        //  - structural springs
+        Vector3f springStructForce(0, 0, 0);
+        const vector<int> connectionsStruct = springsStructural[i].getConnections();
+        for (int c : connectionsStruct) {
+            const Vector3f d = positions[i] - positions[c];
+            const Vector3f F = -kSpring * (d.abs() - rStruct) * d.normalized();
+            springStructForce += F;
+        }
+        //  - shear springs
+        Vector3f springShearForce(0, 0, 0);
+        const vector<int> connectionsShear = springsShear[i].getConnections();
+        for (int c : connectionsShear) {
+            const Vector3f d = positions[i] - positions[c];
+            const Vector3f F = -kSpring * (d.abs() - rShear) * d.normalized();
+            springShearForce += F;
+        }
+        //  - flexion springs
+        Vector3f springFlexForce(0, 0, 0);
+        const vector<int> connectionsFlex = springsFlexion[i].getConnections();
+        for (int c : connectionsFlex) {
+            const Vector3f d = positions[i] - positions[c];
+            const Vector3f F = -kSpring * (d.abs() - rFlex) * d.normalized();
+            springFlexForce += F;
+        }
+        Vector3f springForces = springStructForce + springShearForce + springFlexForce;
+        // net force
+        const Vector3f netForce = gravity + viscousDrag + springForces;
+        // X'' = F(X, X')
+        const Vector3f acceleration = netForce / m;
+        // dX/dt = f(X, t) = <v, F(x,v)>
+        f.push_back(velocities[i]);
+        f.push_back(acceleration);
+    }
     return f;
 }
 
