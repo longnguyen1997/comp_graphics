@@ -5,16 +5,27 @@
 
 #include "particlesystem.h"
 
-class PendulumSystem : public ParticleSystem
-{
+class Spring {
+public:
+    Spring();
+    void addConnection(int i);
+    std::vector<int> getConnections();
+private:
+    std::vector<int> connections;
+};
+
+class PendulumSystem : public ParticleSystem {
 public:
     PendulumSystem();
 
     std::vector<Vector3f> evalF(std::vector<Vector3f> state) override;
-    void draw(GLProgram&);
+    void draw(GLProgram &);
 
-    // inherits 
+    // inherits
     // std::vector<Vector3f> m_vVecState;
+private:
+    std::vector<Spring> springs;
 };
+
 
 #endif
