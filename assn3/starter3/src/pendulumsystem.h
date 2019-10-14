@@ -23,9 +23,7 @@ public:
 
     // inherits
     // std::vector<Vector3f> m_vVecState;
-private:
     std::vector<Spring> springs;
 };
-
 
 #endif
