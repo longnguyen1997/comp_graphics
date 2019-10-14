@@ -13,8 +13,8 @@ const float rFlex = 1.0f;
 
 // Gravity vector (y direction)
 const Vector3f g(0, -9.8, 0);
-// Mass of an object
-const float m = 0.05;
+// Mass of a cloth particle
+const float m = 0.01;
 // Viscous drag constant
 const float kDrag = 0.05;
 // Spring constant
@@ -121,8 +121,26 @@ ClothSystem::ClothSystem() {
     }
 }
 
+vector<Vector3f> extractPos(vector<Vector3f> &state) {
+    vector<Vector3f> positions;
+    for (unsigned int i = 0; i < state.size(); i += 2) {
+        positions.push_back(state[i]);
+    }
+    return positions;
+}
+
+vector<Vector3f> extractVel(vector<Vector3f> &state) {
+    vector<Vector3f> velocities;
+    for (unsigned int i = 1; i < state.size(); i += 2) {
+        velocities.push_back(state[i]);
+    }
+    return velocities;
+}
+
 std::vector<Vector3f> ClothSystem::evalF(std::vector<Vector3f> state) {
-    std::vector<Vector3f> f(state.size());
+    std::vector<Vector3f> f;
+    vector<Vector3f> positions = extractPos(state);
+    vector<Vector3f> velocities = extractVel(state);
     // TODO 5. implement evalF
     // - shear springs
     // - flexion springs
