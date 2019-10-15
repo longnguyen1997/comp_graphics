@@ -18,8 +18,6 @@ public:
     std::vector<Spring> springsShear;
     std::vector<Spring> springsFlexion;
     int numParticles;
-    std::vector<Vector3f> positions;
-    std::vector<Vector3f> velocities;
     // evalF is called by the integrator at least once per time step
     std::vector<Vector3f> evalF(std::vector<Vector3f> state) override;
 
