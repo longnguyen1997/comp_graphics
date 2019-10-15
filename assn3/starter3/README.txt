@@ -1,16 +1,30 @@
-Build Instructions (Athena with Makefile)
-==================
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make
+6.837 - Computer Graphics
+Fall 2019
+Long Nguyen
+lpn@mit.edu
 
-The sample solution binaries are in sample_solution/
+1) How do you compile and run?
+   Please copy and paste:
+   mkdir build; cd build; cmake -j ..; make -j
 
-Submission
-==========
-We only provide official support for developing under the Athena cluster.
-Your submission has to build and run over there to receive credit.
+2) Collaboration?
+   None.
 
-Please submit your entire source directory (excluding the build
-directory) and compiled binary in inst/.
+3) References?
+   No references except Piazza, class notes, LOTS of debugging.
+
+4) Known problems?
+   I selected the best constants I could, but the pendulum particles
+   stop bouncing up and down after maybe 2 oscillations. It does look
+   like the sample solution though. Further, the particle moving in
+   circular motion doesn't move as fast as the sample solution's.
+   I can't really tell much about my cloth, since I didn't draw a
+   smooth surface model, but it does behave and wiggle like a real
+   piece of microfiber cloth that I have would. The wireframe looks
+   good.
+
+5) Extra credit?
+   None. Too hard already.
+
+6) Comments?
+   Not that I can think of! So pleasing to see the end results.
