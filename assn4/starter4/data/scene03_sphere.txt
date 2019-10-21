@@ -1,0 +1,40 @@
+PerspectiveCamera {
+    center 0 0 10
+    direction 0 0 -1  
+    up 0 1 0
+    angle 20
+}
+
+Lights {
+    numLights 1
+    DirectionalLight {
+        direction -0.2 -0.2 -1
+        color 1 1 1
+    }
+}
+
+Background {
+    color 0.2 0 0.6 
+    ambientLight 0 0 0 
+}
+
+Materials {
+    numMaterials 1
+    Material { 
+	diffuseColor 1 1 1
+    }
+}
+
+Group {
+    numObjects 1
+    MaterialIndex 0
+    Transform {
+        ZRotate  45 
+        Scale  1 0.2 1 
+        Sphere {
+	    center 0 0 0 
+            radius 1 
+        }
+    }
+}
+

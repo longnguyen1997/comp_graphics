@@ -1,0 +1,92 @@
+PerspectiveCamera {
+    center -5.3 8.0 8.3
+    direction .4 -.5 -.75
+    up 0 1 0
+    angle 25
+}
+
+Lights {
+    numLights 2
+    DirectionalLight {
+        direction -0.3 -0.5 -0.5 
+	    color 0.3 0.3 0.3
+    }
+    PointLight {
+        position -2 4 -2
+	    color 1.4 1.4 1.4
+	    falloff 0.7
+    }
+}
+
+Background {
+    color 0 0 0
+    ambientLight 0.1 0.1 0.1 
+    cubeMap tex/church
+}
+
+Materials {
+    numMaterials 4
+
+    PhongMaterial {
+        diffuseColor 0.5 0.5 0.5
+	    specularColor 0.4 0.4 0.4
+        shininess 1
+    }
+
+    PhongMaterial {
+      diffuseColor 0.9 0 0 
+    }
+
+    PhongMaterial {
+      diffuseColor 0 0.9 0 
+    }
+
+    PhongMaterial {
+      diffuseColor 0 0 0.9 
+    }
+}
+
+Group {
+    numObjects 4
+
+    MaterialIndex 0
+    Plane {
+      normal 0 1 0
+      offset 0
+    }
+
+    MaterialIndex 1
+    Transform {
+        Translate  -0.8 0 -2 
+	Scale  0.25 1.0 0.25 
+	YRotate  45 
+        Translate  0 1 0 
+        TriangleMesh {
+       	    obj_file models/cube2.obj
+	}
+    }
+
+    MaterialIndex 2
+    Transform {
+        Translate  0 2 -2 
+	Scale  1.6 0.3 0.1 
+        Translate  0 1 0 
+        TriangleMesh {
+       	    obj_file models/cube2.obj
+	}
+    }
+
+    MaterialIndex 3
+    Transform {
+        Translate  0.8 0 -2 
+	Scale  0.25 1.0 0.25 
+	YRotate  45 
+        Translate  0 1 0 
+        TriangleMesh {
+       	    obj_file models/cube2.obj
+	}
+    }
+
+}
+
+
