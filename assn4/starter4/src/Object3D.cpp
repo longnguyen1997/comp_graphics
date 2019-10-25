@@ -91,8 +91,22 @@ bool Plane::intersect(const Ray &r, float tmin, Hit &h) const {
 }
 
 bool Triangle::intersect(const Ray &r, float tmin, Hit &h) const {
-    // TODO implement
-    return false;
+    // See L10 - Raycasting II slides, page 16.
+    Matrix3f A(
+        _v[0] - _v[1],
+        _v[0] - _v[2],
+        r.getDirection().normalized()
+    );
+    Vector3f B = _v[0] - r.getOrigin();
+    Vector3f X = A.inverse() * B;
+    // Barycentric ratios
+    float alpha = 1 - X[0] - X[1];
+    float beta = X[0];
+    float gamma = X[1];
+    float t = X[2];
+    if (t > h.getT() || t < tmin || alpha < 0 || beta < 0 || gamma < 0) return false;
+    h.set(t, material, (alpha * _normals[0] + beta * _normals[1] + gamma * _normals[2]).normalized());
+    return true;
 }
 
 

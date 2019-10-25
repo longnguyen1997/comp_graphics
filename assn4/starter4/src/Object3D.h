@@ -84,7 +84,6 @@ private:
 };
 
 
-// TODO: implement this class.
 // Add more fields as necessary, but do not remove getVertex and getNormal
 // as they are currently called by the Octree for optimization
 class Triangle : public Object3D {
@@ -103,6 +102,7 @@ public:
         _normals[0] = na;
         _normals[1] = nb;
         _normals[2] = nc;
+        material = m;
     }
 
     virtual bool intersect(const Ray &ray, float tmin, Hit &hit) const override;
@@ -120,6 +120,7 @@ public:
 private:
     Vector3f _v[3];
     Vector3f _normals[3];
+    Material *material;
 };
 
 
