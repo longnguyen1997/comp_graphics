@@ -109,12 +109,26 @@ bool Triangle::intersect(const Ray &r, float tmin, Hit &h) const {
     return true;
 }
 
-
 Transform::Transform(const Matrix4f &m,
                      Object3D *obj) : _object(obj) {
-    // TODO implement Transform constructor
+    _object = obj;
+    M = m;
 }
+
 bool Transform::intersect(const Ray &r, float tmin, Hit &h) const {
-    // TODO implement
-    return false;
+
+    // Move ray into object coordinate space
+    Matrix4f worldToLocal = M.inverse();
+    Vector3f rayOriginLocal = (worldToLocal * Vector4f(r.getOrigin(), 1)).xyz();
+    Vector3f rayDirectionLocal = (worldToLocal * Vector4f(r.getDirection(), 0)).xyz();
+    Ray rLocal = Ray(rayOriginLocal, rayDirectionLocal);
+
+    // Check for intersection.
+    if(_object -> intersect(rLocal, tmin, h)) {
+        Vector3f normal = (worldToLocal.transposed() * Vector4f(h.getNormal().normalized(), 0)).xyz().normalized();
+        h.set(h.getT(), h.getMaterial(), normal);
+        return true;
+    } else {
+        return false;
+    }
 }

@@ -135,6 +135,7 @@ public:
 
 private:
     Object3D *_object; //un-transformed object
+    Matrix4f M;
 };
 
 
