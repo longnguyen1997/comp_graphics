@@ -84,8 +84,8 @@ Plane::Plane(const Vector3f &normal, float d, Material *m) : Object3D(m) {
 
 bool Plane::intersect(const Ray &r, float tmin, Hit &h) const {
     // See L9 - Raycasting slides, page 49, for derivation.
-    float t = -(_d + Vector3f::dot(_normal, r.getOrigin())) / Vector3f::dot(_normal, r.getDirection().normalized());
-    if (t < h.getT() || t > tmin) return false;
+    float t = (_d - Vector3f::dot(_normal, r.getOrigin())) / Vector3f::dot(_normal, r.getDirection().normalized());
+    if (t > h.getT() || t < tmin) return false;
     h.set(t, _m, _normal);
     return true;
 }

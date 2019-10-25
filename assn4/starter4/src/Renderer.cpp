@@ -11,13 +11,11 @@
 
 Renderer::Renderer(const ArgParser &args) :
     _args(args),
-    _scene(args.input_file)
-{
+    _scene(args.input_file) {
 }
 
 void
-Renderer::Render()
-{
+Renderer::Render() {
     int w = _args.width;
     int h = _args.height;
 
@@ -31,7 +29,7 @@ Renderer::Render()
     // This look generates camera rays and callse traceRay.
     // It also write to the color, normal, and depth images.
     // You should understand what this code does.
-    Camera* cam = _scene.getCamera();
+    Camera *cam = _scene.getCamera();
     for (int y = 0; y < h; ++y) {
         float ndcy = 2 * (y / (h - 1.0f)) - 1.0f;
         for (int x = 0; x < w; ++x) {
@@ -53,7 +51,7 @@ Renderer::Render()
     }
     // END SOLN
 
-    // save the files 
+    // save the files
     if (_args.output_file.size()) {
         image.savePNG(_args.output_file);
     }
@@ -69,18 +67,27 @@ Renderer::Render()
 
 Vector3f
 Renderer::traceRay(const Ray &r,
-    float tmin,
-    int bounces,
-    Hit &h) const
-{
+                   float tmin,
+                   int bounces,
+                   Hit &h) const {
     // The starter code only implements basic drawing of sphere primitives.
     // You will implement phong shading, recursive ray tracing, and shadow rays.
 
-    // TODO: IMPLEMENT 
+    // TODO: IMPLEMENT
     if (_scene.getGroup()->intersect(r, tmin, h)) {
-        return h.getMaterial()->getDiffuseColor();
+        Vector3f I = _scene.getAmbientLight() * h.getMaterial()->getDiffuseColor();
+        Vector3f p = r.pointAtParameter(h.getT());
+        for (int i = 0; i < _scene.getNumLights(); ++i) {
+            Vector3f tolight;
+            Vector3f intensity;
+            float distToLight;
+            _scene.getLight(i)->getIllumination(p, tolight, intensity, distToLight);
+            Vector3f ILight = h.getMaterial()->shade(r, h, tolight, intensity);
+            I += ILight;
+        }
+        return I;
     } else {
-        return Vector3f(0, 0, 0);
+        return _scene.getBackgroundColor(r.getDirection());
     };
 }
 
