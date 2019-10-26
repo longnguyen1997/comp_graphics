@@ -85,6 +85,18 @@ Renderer::traceRay(const Ray &r,
             Vector3f ILight = h.getMaterial()->shade(r, h, tolight, intensity);
             I += ILight;
         }
+        // Reflections.
+        if (bounces > 0) {
+            // Recursive call.
+            Vector3f V = r.getDirection();
+            Vector3f N = h.getNormal().normalized();
+            Vector3f R = (V - (2 * Vector3f::dot(V, N) * N)).normalized();
+            Hit hPrime = Hit();
+            // Add a little epsilon to avoid noise.
+            Ray rPrime(p + 0.01 * R, R);
+            Vector3f IIndirect = traceRay(rPrime, 0.0f, bounces - 1, hPrime);
+            I += h.getMaterial()->getSpecularColor() * IIndirect;
+        }
         return I;
     } else {
         return _scene.getBackgroundColor(r.getDirection());
