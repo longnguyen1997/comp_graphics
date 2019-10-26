@@ -1,7 +1,8 @@
 # This is the script we will test your submission with.
 
-SIZE="800 800"
-BIN=sample_solution/athena/a4
+SIZE="1024 1024"
+#BIN=./sample_solution/athena/a4
+BIN=./build/a4
 
 ${BIN} -size ${SIZE} -input data/scene01_plane.txt  -output out/a01.png -normals out/a01n.png -depth 8 18 out/a01d.png
 ${BIN} -size ${SIZE} -input data/scene02_cube.txt   -output out/a02.png -normals out/a02n.png -depth 8 18 out/a02d.png

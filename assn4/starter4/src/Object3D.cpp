@@ -93,9 +93,7 @@ bool Plane::intersect(const Ray &r, float tmin, Hit &h) const {
 bool Triangle::intersect(const Ray &r, float tmin, Hit &h) const {
     // See L10 - Raycasting II slides, page 16.
     Matrix3f A(
-        _v[0] - _v[1],
-        _v[0] - _v[2],
-        r.getDirection().normalized()
+        _v[0] - _v[1], _v[0] - _v[2], r.getDirection()
     );
     Vector3f B = _v[0] - r.getOrigin();
     Vector3f X = A.inverse() * B;
@@ -111,7 +109,6 @@ bool Triangle::intersect(const Ray &r, float tmin, Hit &h) const {
 
 Transform::Transform(const Matrix4f &m,
                      Object3D *obj) : _object(obj) {
-    _object = obj;
     M = m;
 }
 
