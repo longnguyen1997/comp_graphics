@@ -8,7 +8,6 @@
 
 #include <limits>
 
-
 Renderer::Renderer(const ArgParser &args) :
     _args(args),
     _scene(args.input_file) {
@@ -63,8 +62,6 @@ Renderer::Render() {
     }
 }
 
-
-
 Vector3f
 Renderer::traceRay(const Ray &r,
                    float tmin,
@@ -83,6 +80,24 @@ Renderer::traceRay(const Ray &r,
             float distToLight;
             _scene.getLight(i)->getIllumination(p, tolight, intensity, distToLight);
             Vector3f ILight = h.getMaterial()->shade(r, h, tolight, intensity);
+            // To compute cast shadows, you will send rays from the surface point to each
+            // light source. If an intersection is reported, and the intersection is closer
+            // than the distance to the light source, the current surface point is in shadow
+            // and direct illumination from that light source is ignored. Note that shadow
+            // rays must be sent to all light sources.
+            if (_args.shadows) {
+                Vector3f shadowRayOrigin = p + 0.05 * tolight;
+                Ray shadowRay(shadowRayOrigin, tolight);
+                Hit shadowHit = Hit();
+                Vector3f shadowTrace = traceRay(shadowRay, 0, 0, shadowHit);
+                bool shadowIntersectedSomething = shadowHit.getT() < std::numeric_limits<float>::max();
+                float distToIntersection = (shadowRay.pointAtParameter(shadowHit.getT()) - shadowRayOrigin).abs();
+                if (
+                    shadowIntersectedSomething && distToIntersection < distToLight
+                ) {
+                    ILight = Vector3f(0); // Object in shadow from this light, discount light.
+                }
+            }
             I += ILight;
         }
         // Reflections.
@@ -95,7 +110,7 @@ Renderer::traceRay(const Ray &r,
             // Add a little epsilon to avoid noise.
             Ray rPrime(p + 0.01 * R, R);
             Vector3f IIndirect = traceRay(rPrime, 0.0f, bounces - 1, hPrime);
-            I += h.getMaterial()->getSpecularColor() * IIndirect;
+            I += (h.getMaterial()->getSpecularColor() * IIndirect);
         }
         return I;
     } else {
