@@ -1,6 +1,6 @@
 # This is the script we will test your submission with.
 
-SIZE="1024 1024"
+SIZE="4096 4096"
 #BIN=./sample_solution/athena/a4
 BIN=./build/a4
 
