@@ -39,8 +39,34 @@ objparser scene;
 Vector3f  light_dir;
 glfwtimer timer;
 
+std::map<std::string, GLuint> gltextures;
+
 
 // FUNCTION IMPLEMENTATIONS
+
+void loadTextures() {
+    for (auto it = scene.textures.begin(); it != scene.textures.end(); ++it) {
+        std::string name = it->first;
+        rgbimage &im = it->second;
+
+        // Create OpenGL Texture
+        GLuint gltexture;
+        glGenTextures(1, &gltexture);
+        glBindTexture(GL_TEXTURE_2D, gltexture);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
+                     im.w, im.h, 0, GL_RGB,
+                     GL_UNSIGNED_BYTE, im.data.data());
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        gltextures.insert(std::make_pair(name, gltexture));
+    }
+}
+
+void freeTextures() {
+    for (auto it = scene.textures.begin(); it != scene.textures.end(); ++it) {
+        glDeleteTextures(1, &gltextures[it->first]);
+    }
+}
 
 // animate light source direction
 // this one is implemented for you
@@ -71,6 +97,13 @@ void drawScene(GLint program, Matrix4f V, Matrix4f P) {
                                batch.mat.ambient,
                                batch.mat.specular,
                                batch.mat.shininess);
+        /*
+        Back in the drawScene function, you must make sure to bind
+        the right texture before calling recorder.draw(). Just
+        before you draw (1) look up the needed texture handle
+        from the std::map, and (2) glBindTexture() it as GL TEXTURE 2D.
+        */
+        glBindTexture(GL_TEXTURE_2D, gltextures[batch.mat.diffuse_texture]);
         recorder.draw();
     }
 }
@@ -128,7 +161,7 @@ int main(int argc, char *argv[]) {
     glEnable(GL_BLEND);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     // TODO add loadXYZ() function calls here
-    // loadTextures();
+    loadTextures();
     // loadFramebuffer();
 
     camera.SetDimensions(600, 600);
@@ -174,7 +207,7 @@ int main(int argc, char *argv[]) {
     // glGen* or glCreate* must be freed.
     // TODO: add freeXYZ() function calls here
     // freeFramebuffer();
-    // freeTextures();
+    freeTextures();
 
     glfwDestroyWindow(window);
 

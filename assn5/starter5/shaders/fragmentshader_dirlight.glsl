@@ -18,6 +18,8 @@ uniform float alpha;
 
 // TODO add more uniforms
 
+uniform sampler2D diffuseTex;
+
 uniform vec3 lightPos;
 uniform vec3 lightDiff;
 
@@ -53,5 +55,8 @@ void main () {
 	// TODO implement shadow mapping here
 
     vec3 kd = diffColor;
+    kd = texture(diffuseTex, var_Color.xy).xyz;
     out_Color = vec4(ambientColor + blinn_phong(kd).xyz, 1);
+    // Uncomment following line to debug textures.
+    // out_Color = vec4(var_Color.xy, 0, 0);
 }
