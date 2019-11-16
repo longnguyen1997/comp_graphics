@@ -50,12 +50,29 @@ void updateLightDirection() {
     //elapsed_s = 88.88f;
     float timescale = 0.1f;
     light_dir = Vector3f(2.0f * sinf((float)elapsed_s * 1.5f * timescale),
-        5.0f, 2.0f * cosf(2 + 1.9f * (float)elapsed_s * timescale));
+                         5.0f, 2.0f * cosf(2 + 1.9f * (float)elapsed_s * timescale));
     light_dir.normalize();
 }
 
 
 void drawScene(GLint program, Matrix4f V, Matrix4f P) {
+    VertexRecorder recorder;
+    Matrix4f I = Matrix4f::identity();
+    updateTransformUniforms(program, I, V, P);
+    for (draw_batch batch : scene.batches) {
+        int i = batch.start_index;
+        while (i < batch.start_index + batch.nindices) {
+            int j = scene.indices[i];
+            recorder.record(scene.positions[j], scene.normals[j], Vector3f(scene.texcoords[j], 0.0));
+            ++i;
+        }
+        updateMaterialUniforms(program,
+                               batch.mat.diffuse,
+                               batch.mat.ambient,
+                               batch.mat.specular,
+                               batch.mat.shininess);
+        recorder.draw();
+    }
 }
 
 void draw() {
@@ -81,13 +98,11 @@ void draw() {
 
 // Main routine.
 // Set up OpenGL, define the callbacks and start the main loop
-int main(int argc, char* argv[])
-{
+int main(int argc, char *argv[]) {
     std::string basepath = "./";
     if (argc > 2) {
         printf("Usage: %s [basepath]\n", argv[0]);
-    }
-    else if (argc == 2) {
+    } else if (argc == 2) {
         basepath = argv[1];
     }
     printf("Loading scene and shaders relative to path %s\n", basepath.c_str());
@@ -164,5 +179,5 @@ int main(int argc, char* argv[])
     glfwDestroyWindow(window);
 
 
-    return 0;	// This line is never reached.
+    return 0;   // This line is never reached.
 }
