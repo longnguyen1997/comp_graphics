@@ -168,6 +168,16 @@ void drawScene(GLint program, Matrix4f V, Matrix4f P) {
         from the std::map, and (2) glBindTexture() it as GL TEXTURE 2D.
         */
         glBindTexture(GL_TEXTURE_2D, gltextures[batch.mat.diffuse_texture]);
+        // For shadow mapping, after setting up the diffuse texture
+        // in drawScene, we switch to texture unit 1, bind the depth
+        // texture, and then switch back to texture unit 0 to make
+        // sure we don’t affect other code that expects unit 0
+        // (the default) to be active.
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, fb_depthtex);
+        glActiveTexture(GL_TEXTURE0);
+        int loc = glGetUniformLocation(program, "shadowTex");
+        glUniform1i(loc, 1);
         recorder.draw();
     }
 }

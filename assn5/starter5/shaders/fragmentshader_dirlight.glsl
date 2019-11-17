@@ -19,6 +19,7 @@ uniform float alpha;
 // TODO add more uniforms
 
 uniform sampler2D diffuseTex;
+uniform sampler2D shadowTex;
 
 uniform vec3 lightPos;
 uniform vec3 lightDiff;
