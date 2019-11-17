@@ -41,8 +41,72 @@ glfwtimer timer;
 
 std::map<std::string, GLuint> gltextures;
 
+GLuint fb, fb_depthtex, fb_colortex;
+
 
 // FUNCTION IMPLEMENTATIONS
+
+Matrix4f getLightView() {
+    // center should be the center of the sponze scene
+    // (i.e. position of the dragon statue).
+    Vector3f center = Vector3f(0, 1, 0);
+    // The line of sight from eye to center
+    // should be parallel to light dir.
+    Vector3f eye = center + light_dir;
+    // Up must be orthogonal to light dir.
+    Vector3f up = Vector3f(-light_dir.y(),
+                           light_dir.x(),
+                           0).normalized();
+    return Matrix4f::lookAt(eye, center, up);
+}
+
+Matrix4f getLightProjection() {
+    int scale = 50;
+    int clip = 10;
+    return Matrix4f::orthographicProjection(scale, scale, -clip, clip);
+}
+
+void loadFramebuffer() {
+
+    // COLOR
+    // Inside loadFramebuffer(), request a valid handle
+    // for each texture with calls to glGenTextures().
+    glGenTextures(1, &fb_colortex);
+    // Bind the color texture to GL TEXTURE 2D.
+    glBindTexture(GL_TEXTURE_2D, fb_colortex);
+    // Use glTexImage2D to allocate space for it.
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    // DEPTH
+    glGenTextures(1, &fb_depthtex);
+    glBindTexture(GL_TEXTURE_2D, fb_depthtex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    // FRAMEBUFFER
+    glGenFramebuffers(1, &fb);
+    glBindFramebuffer(GL_FRAMEBUFFER, fb);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D, fb_colortex, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                           GL_TEXTURE_2D, fb_depthtex, 0);
+
+    // Check that things went well.
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if ( status != GL_FRAMEBUFFER_COMPLETE) {
+        printf("ERROR, incomplete framebuffer\n");
+        exit(1);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+}
+
+void freeFramebuffer() {
+    glDeleteFramebuffers(1, &fb);
+    glDeleteTextures(1, &fb_depthtex);
+    glDeleteTextures(1, &fb_colortex);
+}
 
 void loadTextures() {
     for (auto it = scene.textures.begin(); it != scene.textures.end(); ++it) {
@@ -111,9 +175,16 @@ void drawScene(GLint program, Matrix4f V, Matrix4f P) {
 void draw() {
     // 2. DEPTH PASS
     // - bind framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, fb);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // - configure viewport
+    glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+    glUseProgram(program_color);
     // - compute camera matrices (light source as camera)
+    Matrix4f LV = getLightView();
+    Matrix4f P = getLightProjection();
     // - call drawScene
+    drawScene(program_color, LV, P);
 
     // 1. LIGHT PASS
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -127,6 +198,10 @@ void draw() {
 
     // 3. DRAW DEPTH TEXTURE AS QUAD
     // drawTexturedQuad() helper in main.h is useful here.
+    glViewport(0, 0, 256, 256);
+    drawTexturedQuad(fb_depthtex);
+    glViewport(256, 0, 256, 256);
+    drawTexturedQuad(fb_colortex);
 }
 
 // Main routine.
@@ -162,7 +237,7 @@ int main(int argc, char *argv[]) {
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     // TODO add loadXYZ() function calls here
     loadTextures();
-    // loadFramebuffer();
+    loadFramebuffer();
 
     camera.SetDimensions(600, 600);
     camera.SetPerspective(50);
@@ -206,7 +281,7 @@ int main(int argc, char *argv[]) {
     // All OpenGL resource that are created with
     // glGen* or glCreate* must be freed.
     // TODO: add freeXYZ() function calls here
-    // freeFramebuffer();
+    freeFramebuffer();
     freeTextures();
 
     glfwDestroyWindow(window);
