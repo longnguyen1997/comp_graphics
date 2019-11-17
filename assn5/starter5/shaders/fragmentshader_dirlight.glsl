@@ -21,6 +21,8 @@ uniform float alpha;
 uniform sampler2D diffuseTex;
 uniform sampler2D shadowTex;
 
+uniform mat4 light_VP;
+
 uniform vec3 lightPos;
 uniform vec3 lightDiff;
 
@@ -57,7 +59,21 @@ void main () {
 
     vec3 kd = diffColor;
     kd = texture(diffuseTex, var_Color.xy).xyz;
-    out_Color = vec4(ambientColor + blinn_phong(kd).xyz, 1);
+
+    vec4 x_ndc = light_VP * vec4(var_Position, 1);
+    vec4 x_tex = (x_ndc + vec4(1,1,1,1))/2.0;
+
+    float this_depth = x_tex.z;
+    float occluder_depth = texture(shadowTex, x_tex.xy).r;
+
+    vec4 color = vec4(ambientColor + blinn_phong(kd).xyz, 1);
+    if (occluder_depth + 0.01 < this_depth) {
+        // Fragment in shadow. 60%.
+        out_Color = 0.6 * color;
+    } else {
+        // Fragment illuminated.
+        out_Color = color;
+    }
     // Uncomment following line to debug textures.
     // out_Color = vec4(var_Color.xy, 0, 0);
 }

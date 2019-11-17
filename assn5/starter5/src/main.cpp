@@ -178,6 +178,15 @@ void drawScene(GLint program, Matrix4f V, Matrix4f P) {
         glActiveTexture(GL_TEXTURE0);
         int loc = glGetUniformLocation(program, "shadowTex");
         glUniform1i(loc, 1);
+        /*
+        Before drawing in drawScene(), look up the location
+        of an additional 4x4 matrix uniform named light_VP
+        and pass the Light View Projection matrix. Make
+        sure you get the order of view and projection right!
+        */
+        int lightLoc = glGetUniformLocation(program, "light_VP");
+        Matrix4f lightviewProjection = getLightProjection() * getLightView();
+        glUniformMatrix4fv(lightLoc, 1, false, lightviewProjection);
         recorder.draw();
     }
 }
