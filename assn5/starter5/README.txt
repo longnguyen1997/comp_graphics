@@ -21,11 +21,14 @@ fully understand what was happening.
 
 4. Known problems
 
-For shadow fragment visibility, I settled on
-60%. This was an arbitrary decision, but it
-doesn't affect functionality, so I don't think
-it's a problem, per se, but I did choose it
-myself.
+For shadow visibility, I went with a Piazza
+post. My previous submission arbitrarily used
+60% as the visibility for in-shadow fragments.
+I'm not sure if the Piazza post (by Darius) is
+100% correct either, but it uses the depth of
+x_tex as a scaling factor and doesn't use
+the ambient color for the shadow. I hope this
+counts somewhat.
 
 5. Extra credit
 
@@ -37,3 +40,4 @@ Please introduce students to GLSL before
 making us dive right in! Similar to C++,
 yes, but still tricky to read and grasp
 at first.
+
