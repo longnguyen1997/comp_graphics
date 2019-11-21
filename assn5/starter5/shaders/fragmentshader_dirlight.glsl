@@ -68,7 +68,6 @@ void main () {
 
     vec4 color = vec4(ambientColor + blinn_phong(kd).xyz, 1);
     if (occluder_depth + 0.01 < this_depth) {
-        // Fragment in shadow. 60%.
         out_Color = this_depth * vec4(blinn_phong(kd).xyz, 1);
     } else {
         // Fragment illuminated.
