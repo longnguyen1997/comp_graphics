@@ -1,0 +1,48 @@
+
+PerspectiveCamera {
+    center 0 0 10 
+    direction 0 0 -1
+    up 0 1 0
+    angle 30
+}
+
+
+Lights {
+    numLights 1
+    DirectionalLight {
+        direction -0.5 -0.3 -1
+        color 0.9 0.9 0.9 
+    }
+}
+
+Background {
+    color 0.2 0 0.6
+    ambientLight 0.1 0.1 0.1
+	cubeMap tex/church
+}
+
+Materials {
+    numMaterials 1
+    Material { 
+	specularColor 0.9 0.9 0.9
+	shininess 30
+	diffuseColor 0.2 0.2 0.3
+	}
+}
+
+Group {
+    numObjects 2
+    MaterialIndex 0
+	Transform {
+	    Translate  0.5 -2.6 0 
+	    Scale  12 12 12 
+		TriangleMesh {
+			obj_file models/bunny_1k.obj
+		}
+	}
+    MaterialIndex 0
+      Plane {
+	normal 0 1 0
+        offset -2
+    }
+}
