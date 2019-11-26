@@ -6,6 +6,8 @@
 
 #include <string>
 
+using namespace std;
+
 class Object3D {
 public:
     Object3D() {
@@ -83,6 +85,35 @@ private:
 
 };
 
+// FINAL PROJECT
+struct TriangleBoundingBox {
+    Vector3f min;
+    Vector3f max;
+    TriangleBoundingBox(const Vector3f min, const Vector3f max): min(min), max(max) {};
+    TriangleBoundingBox() {};
+    std::pair<float, float> intersect(Ray &r) const;
+    Vector3f minBounds() const {
+        return min;
+    }
+    Vector3f maxBounds() const {
+        return max;
+    }
+    float dx() const {
+        return max.x() - min.x();
+    };
+    float dy() const {
+        return max.y() - min.y();
+    };
+    float dz() const {
+        return max.z() - min.z();
+    };
+    float d(int axis) const {
+        return max[axis] - min[axis];
+    }
+    float isPlanar() {
+        return dx() <= 0.01 || dy() <= 0.01 || dz() <= 0.01;
+    }
+};
 
 // Add more fields as necessary, but do not remove getVertex and getNormal
 // as they are currently called by the Octree for optimization
@@ -103,7 +134,20 @@ public:
         _normals[1] = nb;
         _normals[2] = nc;
         material = m;
+
+        // FINAL PROJECT
+        Vector3f minBounds, maxBounds;
+        minBounds.x() = min(a.x(), min(b.x(), c.x()));
+        minBounds.y() = min(a.y(), min(b.y(), c.y()));
+        minBounds.z() = min(a.z(), min(b.z(), c.z()));
+        maxBounds.x() = max(a.x(), min(b.x(), c.x()));
+        maxBounds.y() = max(a.y(), min(b.y(), c.y()));
+        maxBounds.z() = max(a.z(), min(b.z(), c.z()));
+        box = TriangleBoundingBox(minBounds, maxBounds);
     }
+
+    // FINAL PROJECT
+    TriangleBoundingBox box;
 
     virtual bool intersect(const Ray &ray, float tmin, Hit &hit) const override;
 

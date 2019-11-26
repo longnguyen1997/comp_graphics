@@ -16,18 +16,18 @@ enum DIMSPLIT {
 class KDTree {
 public:
 
-	// CONSTRUCTOR
+    // CONSTRUCTOR
     KDTree();
 
     // ATTRIBUTES
-    KDTree *backNode, frontNode; // children
+    KDTree *left, *right; // children
     int dimSplit; // either X, Y, or Z axis
     float splitDistance; // from origin along split axis
     bool isLeaf;
-    vector<Object3D> triangles; // only leaves have lists of triangles
+    vector<Triangle *> triangles; // only leaves have lists of triangles
 
     // FUNCTIONS
-    
+    static KDTree *buildTree(vector<Triangle *> triangles);
 };
 
 #endif // KDTREE_H
