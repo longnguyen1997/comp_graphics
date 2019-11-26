@@ -8,6 +8,36 @@
 
 using namespace std;
 
+// FINAL PROJECT
+struct BoundingBox {
+    Vector3f min;
+    Vector3f max;
+    BoundingBox(const Vector3f min, const Vector3f max): min(min), max(max) {};
+    BoundingBox() {};
+    std::pair<float, float> intersect(Ray &r) const;
+    Vector3f minBounds() const {
+        return min;
+    }
+    Vector3f maxBounds() const {
+        return max;
+    }
+    float dx() const {
+        return max.x() - min.x();
+    };
+    float dy() const {
+        return max.y() - min.y();
+    };
+    float dz() const {
+        return max.z() - min.z();
+    };
+    float d(int axis) const {
+        return max[axis] - min[axis];
+    }
+    float isPlanar() {
+        return dx() <= 0.01 || dy() <= 0.01 || dz() <= 0.01;
+    }
+};
+
 class Object3D {
 public:
     Object3D() {
@@ -31,6 +61,8 @@ public:
 
     std::string   type;
     Material     *material;
+    bool isTriangle;
+    BoundingBox box;
 };
 
 
@@ -57,63 +89,6 @@ private:
     float    _radius;
 };
 
-class Group : public Object3D {
-public:
-    // Return true if intersection found
-    virtual bool intersect(const Ray &r, float tmin, Hit &h) const override;
-
-    // Add object to group
-    void addObject(Object3D *obj);
-
-    // Return number of objects in group
-    int getGroupSize() const;
-private:
-    std::vector<Object3D *> m_members;
-};
-
-// TODO: Implement Plane representing an infinite plane
-// Choose your representation, add more fields and fill in the functions
-class Plane : public Object3D {
-public:
-    Plane(const Vector3f &normal, float d, Material *m);
-
-    virtual bool intersect(const Ray &r, float tmin, Hit &h) const override;
-private:
-    float _d;
-    Vector3f _normal;
-    Material *_m;
-
-};
-
-// FINAL PROJECT
-struct TriangleBoundingBox {
-    Vector3f min;
-    Vector3f max;
-    TriangleBoundingBox(const Vector3f min, const Vector3f max): min(min), max(max) {};
-    TriangleBoundingBox() {};
-    std::pair<float, float> intersect(Ray &r) const;
-    Vector3f minBounds() const {
-        return min;
-    }
-    Vector3f maxBounds() const {
-        return max;
-    }
-    float dx() const {
-        return max.x() - min.x();
-    };
-    float dy() const {
-        return max.y() - min.y();
-    };
-    float dz() const {
-        return max.z() - min.z();
-    };
-    float d(int axis) const {
-        return max[axis] - min[axis];
-    }
-    float isPlanar() {
-        return dx() <= 0.01 || dy() <= 0.01 || dz() <= 0.01;
-    }
-};
 
 // Add more fields as necessary, but do not remove getVertex and getNormal
 // as they are currently called by the Octree for optimization
@@ -143,11 +118,10 @@ public:
         maxBounds.x() = max(a.x(), min(b.x(), c.x()));
         maxBounds.y() = max(a.y(), min(b.y(), c.y()));
         maxBounds.z() = max(a.z(), min(b.z(), c.z()));
-        box = TriangleBoundingBox(minBounds, maxBounds);
-    }
+        box = BoundingBox(minBounds, maxBounds);
 
-    // FINAL PROJECT
-    TriangleBoundingBox box;
+        isTriangle = true;
+    }
 
     virtual bool intersect(const Ray &ray, float tmin, Hit &hit) const override;
 
@@ -166,6 +140,55 @@ private:
     Vector3f _normals[3];
     Material *material;
 };
+
+class Group : public Object3D {
+public:
+    // Return true if intersection found
+    virtual bool intersect(const Ray &r, float tmin, Hit &h) const override;
+
+    // Add object to group
+    void addObject(Object3D *obj);
+
+    // Return number of objects in group
+    int getGroupSize() const;
+
+    // FINAL PROJECT
+    // Bounding box for entire group; TRIANGLES ONLY
+    void calculateBoundingBox() {
+        Vector3f minBounds, maxBounds;
+        // Get the global extrema.
+        for (Object3D *obj : m_members) {
+            // Check that the object is a triangle
+            if (obj->isTriangle) {
+                // Slide 43 of L12 - Accelerating Raytracing.
+                minBounds.x() = min(minBounds.x(), (obj->box).minBounds().x());
+                minBounds.y() = min(minBounds.y(), (obj->box).minBounds().y());
+                minBounds.z() = min(minBounds.z(), (obj->box).minBounds().z());
+                maxBounds.x() = max(maxBounds.x(), (obj->box).maxBounds().x());
+                maxBounds.y() = max(maxBounds.y(), (obj->box).maxBounds().y());
+                maxBounds.z() = max(maxBounds.z(), (obj->box).maxBounds().z());
+                box = BoundingBox(minBounds, maxBounds);
+            }
+        }
+    }
+private:
+    std::vector<Object3D *> m_members;
+};
+
+// TODO: Implement Plane representing an infinite plane
+// Choose your representation, add more fields and fill in the functions
+class Plane : public Object3D {
+public:
+    Plane(const Vector3f &normal, float d, Material *m);
+
+    virtual bool intersect(const Ray &r, float tmin, Hit &h) const override;
+private:
+    float _d;
+    Vector3f _normal;
+    Material *_m;
+
+};
+
 
 
 // TODO implement this class

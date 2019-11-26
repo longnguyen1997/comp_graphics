@@ -17,7 +17,9 @@ class KDTree {
 public:
 
     // CONSTRUCTOR
-    KDTree();
+    KDTree() {
+        dimSplit = DIMSPLIT::x;
+    }
 
     // ATTRIBUTES
     KDTree *left, *right; // children

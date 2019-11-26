@@ -12,6 +12,10 @@
 Renderer::Renderer(const ArgParser &args) :
     _args(args),
     _scene(args.input_file) {
+        // FINAL PROJECT
+        // Calculate bounding box of entire
+        // scene to start building KD-tree
+        _scene.getGroup()->calculateBoundingBox();
 }
 
 void
