@@ -123,28 +123,36 @@ Mesh::Mesh(const std::string &filename, Material *material) :
     }
     box = BoundingBox(minBounds, maxBounds);
 
+    // Start on x axis.
+    int dimSplit = 0;
     rootKD = rootKD->buildTree(triangles,
-                                 box,
-                                 0);
+                               box,
+                               dimSplit);
 
     octree.build(this);
 }
 
 bool
 Mesh::intersect(const Ray &r, float tmin, Hit &h) const {
-#if 1
+#if 0
     ray = &r;
     hit = &h;
     tm = tmin;
     return octree.intersect(r);
 #else
-    bool result = false;
-    for (Triangle t : _triangles) {
-        if (t.intersect(r, tmin, h)) {
-            result = true;
-        }
+    // FINAL PROJECT
+    if (rootKD->traverse(r, tmin, h)) {
+        return true;
+    } else {
+        return false;
     }
-    return result;
+    // bool result = false;
+    // for (Triangle t : _triangles) {
+    //     if (t.intersect(r, tmin, h)) {
+    //         result = true;
+    //     }
+    // }
+    // return result;
 #endif
 }
 

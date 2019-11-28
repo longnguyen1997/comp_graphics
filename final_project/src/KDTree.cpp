@@ -3,6 +3,8 @@
 #include <limits>
 #include <iostream>
 
+bool PRINT_DEBUG = true;
+
 bool KDTree::traverse(const Ray &r, float tmin, Hit &h) {
     vector<float> pathTimes = box.intersect(r);
     if (pathTimes.size() == 0) return false;
@@ -10,7 +12,6 @@ bool KDTree::traverse(const Ray &r, float tmin, Hit &h) {
 }
 
 bool KDTree::traverse(const Ray &r, float tmin, Hit &h, float tstart, float tend) {
-    cout << "traverse called" << endl;
     if (isLeaf) {
         for (Triangle *triangle : triangles) {
             if (triangle->intersect(r, tmin, h)) return true;
@@ -39,6 +40,15 @@ bool KDTree::traverse(const Ray &r, float tmin, Hit &h, float tstart, float tend
     return false;
 }
 
+void KDTree::splitBox(const BoundingBox &box, int dimSplit, float splitDistance,
+                      BoundingBox &boxLeft, BoundingBox &boxRight) {
+    // cout << "splitting bounding box" << endl;
+    boxLeft = box;
+    boxRight = box;
+    float displacement = boxLeft.min[dimSplit] + splitDistance;
+    boxLeft.max[dimSplit] = displacement;
+    boxRight.min[dimSplit] = displacement;
+}
 
 void KDTree::sortTriangles(vector<Triangle *> &triangles,
                            int dimSplit, float splitDistance,
@@ -54,38 +64,30 @@ void KDTree::sortTriangles(vector<Triangle *> &triangles,
     }
 }
 
-void KDTree::splitBox(const BoundingBox &box, int dimSplit, float splitDistance,
-                      BoundingBox &boxLeft, BoundingBox &boxRight) {
-    // cout << "splitting bounding box" << endl;
-    boxLeft = box;
-    boxRight = box;
-    float displacement = boxLeft.min[dimSplit] + splitDistance;
-    boxLeft.max[dimSplit] = displacement;
-    boxRight.min[dimSplit] = displacement;
-}
-
 int c = 0;
 KDTree *KDTree::buildTree(std::vector<Triangle *> triangles,
                           const BoundingBox &box,
                           int dimSplit) {
+
+    if (!PRINT_DEBUG) cout.rdbuf(nullptr);
+
     c++;
-    // cout << "function call #" << c << endl;
-    // cout << "num of triangles " << triangles.size() << endl;
+    cout << endl << "Function call #" << c << endl;
     switch(dimSplit) {
     case 0:
-        cout << "X AXIS: " << triangles.size() << " triangles, box from " << box.min[dimSplit] << " to " << box.max[dimSplit] << endl;
+        cout << "   > X AXIS: " << triangles.size() << " triangles, box from " << box.min[dimSplit] << " to " << box.max[dimSplit] << endl;
         break;
     case 1:
-        cout << "Y AXIS: " << triangles.size() << " triangles, box from " << box.min[dimSplit] << " to " << box.max[dimSplit] << endl;
+        cout << "   > Y AXIS: " << triangles.size() << " triangles, box from " << box.min[dimSplit] << " to " << box.max[dimSplit] << endl;
         break;
     case 2:
-        cout << "Z AXIS: " << triangles.size() << " triangles, box from " << box.min[dimSplit] << " to " << box.max[dimSplit] << endl;
+        cout << "   > Z AXIS: " << triangles.size() << " triangles, box from " << box.min[dimSplit] << " to " << box.max[dimSplit] << endl;
         break;
     }
 
     // Base case.
     if (triangles.size() <= 15) {
-        // cout << "building leaf node with " << triangles.size() << " triangles" << endl;
+        cout << "   > Building leaf node with " << triangles.size() << " triangles..." << endl;
         KDTree *leaf = new KDTree();
         leaf->isLeaf = true;
         leaf->box = box;
@@ -94,25 +96,24 @@ KDTree *KDTree::buildTree(std::vector<Triangle *> triangles,
     }
 
     // Recursive case: build subtrees.
+    // Naively split at half of the current distance.
+    // TODO: Implement sliding midpoint for efficiency.
     float splitDistance = box.d(dimSplit) / 2.f; // midpoint method
     BoundingBox boxLeft, boxRight;
-    std::vector<Triangle *> trianglesLeft, trianglesRight;
     splitBox(box, dimSplit, splitDistance,
              boxLeft, boxRight);
-    cout << "Left box split: from " << boxLeft.min[dimSplit] << " to " << boxLeft.max[dimSplit] << endl;
-    cout << "Right box split: from " << boxRight.min[dimSplit] << " to " << boxRight.max[dimSplit] << endl;
-    cout << endl;
+
+    cout << "   > Left box split: from " << boxLeft.min[dimSplit] << " to " << boxLeft.max[dimSplit] << endl;
+    cout << "   > Right box split: from " << boxRight.min[dimSplit] << " to " << boxRight.max[dimSplit] << endl;
+
+    std::vector<Triangle *> trianglesLeft, trianglesRight;
     sortTriangles(triangles, dimSplit, box.min[dimSplit] + splitDistance,
                   trianglesLeft, trianglesRight);
-    // cout << "size of left " << trianglesLeft.size() << endl;
-    // cout << "size of right " << trianglesRight.size() << endl;
     KDTree *root = new KDTree();
     int nextDimension = (dimSplit + 1) % 3;
-    // Naively split at half of the current distance.
     root->dimSplit = dimSplit;
     root->box = box;
     root->left = buildTree(trianglesLeft, boxLeft, nextDimension);
     root->right = buildTree(trianglesRight, boxRight, nextDimension);
-    // cout << "built left and right subtrees" << endl;
     return root;
 }
