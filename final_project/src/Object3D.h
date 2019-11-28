@@ -3,24 +3,30 @@
 
 #include "Ray.h"
 #include "Material.h"
+#include <iostream>
 
 #include <string>
 
 using namespace std;
 
 // FINAL PROJECT
-struct BoundingBox {
+class BoundingBox {
+
+public:
+
     Vector3f min;
     Vector3f max;
+
     BoundingBox(const Vector3f min, const Vector3f max): min(min), max(max) {};
     BoundingBox() {};
-    std::pair<float, float> intersect(Ray &r) const;
+
     Vector3f minBounds() const {
         return min;
     }
     Vector3f maxBounds() const {
         return max;
     }
+
     float dx() const {
         return max.x() - min.x();
     };
@@ -30,11 +36,61 @@ struct BoundingBox {
     float dz() const {
         return max.z() - min.z();
     };
+
     float d(int axis) const {
         return max[axis] - min[axis];
     }
+
     float isPlanar() {
         return dx() <= 0.01 || dy() <= 0.01 || dz() <= 0.01;
+    }
+
+    // Code taken mostly from
+    // https://www.scratchapixel.com/lessons/3d-basic-rendering/
+    // minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection.
+    vector<float> intersect(const Ray &r) {
+        Vector3f orig = r.getOrigin();
+        Vector3f dir = r.getDirection();
+        float tmin = (min.x() - orig.x()) / dir.x();
+        float tmax = (max.x() - orig.x()) / dir.x();
+
+        if (tmin > tmax) swap(tmin, tmax);
+
+        float tymin = (min.y() - orig.y()) / dir.y();
+        float tymax = (max.y() - orig.y()) / dir.y();
+
+        if (tymin > tymax) swap(tymin, tymax);
+
+        if ((tmin > tymax) || (tymin > tmax))
+            return vector<float> {};
+
+        if (tymin > tmin)
+            tmin = tymin;
+
+        if (tymax < tmax)
+            tmax = tymax;
+
+        float tzmin = (min.z() - orig.z()) / dir.z();
+        float tzmax = (max.z() - orig.z()) / dir.z();
+
+        if (tzmin > tzmax) swap(tzmin, tzmax);
+
+        if ((tmin > tzmax) || (tzmin > tmax))
+            return vector<float> {};
+
+        if (tzmin > tmin)
+            tmin = tzmin;
+
+        if (tzmax < tmax)
+            tmax = tzmax;
+
+        // See slide 69 of L12 - Accelerated Raytracing.
+        // Slides call them tstart and tend
+        // to avoid confusion with tmin for our rays.
+        float tstart = tmin;
+        float tend = tmax;
+
+        return vector<float> {tstart, tend};
     }
 };
 
@@ -61,7 +117,8 @@ public:
 
     std::string   type;
     Material     *material;
-    bool isTriangle;
+    bool isTriangle = false;
+    bool isMesh = false;
     BoundingBox box;
 };
 
@@ -102,6 +159,9 @@ public:
              const Vector3f &nc,
              Material *m) :
         Object3D(m) {
+
+        isTriangle = true;
+
         _v[0] = a;
         _v[1] = b;
         _v[2] = c;
@@ -120,7 +180,7 @@ public:
         maxBounds.z() = max(a.z(), min(b.z(), c.z()));
         box = BoundingBox(minBounds, maxBounds);
 
-        isTriangle = true;
+
     }
 
     virtual bool intersect(const Ray &ray, float tmin, Hit &hit) const override;
@@ -188,8 +248,6 @@ private:
     Material *_m;
 
 };
-
-
 
 // TODO implement this class
 // So that the intersect function first transforms the ray

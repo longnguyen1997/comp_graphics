@@ -7,29 +7,40 @@
 #include "Object3D.h"
 #include <limits>
 
-using namespace std;
-
-enum DIMSPLIT {
-    x, y, z
-};
-
+// FINAL PROJECT
 class KDTree {
 public:
 
     // CONSTRUCTOR
-    KDTree() {
-        dimSplit = DIMSPLIT::x;
-    }
+
+    KDTree() {};
 
     // ATTRIBUTES
+
     KDTree *left, *right; // children
-    int dimSplit; // either X, Y, or Z axis
+    int dimSplit = 0; // either X, Y, or Z axis
     float splitDistance; // from origin along split axis
-    bool isLeaf;
-    vector<Triangle *> triangles; // only leaves have lists of triangles
+    bool isLeaf = false;
+    std::vector<Triangle *> triangles; // only leaves have lists of triangles
+    BoundingBox box; // box partition for this node
 
     // FUNCTIONS
-    static KDTree *buildTree(vector<Triangle *> triangles);
+
+    bool traverse(const Ray &r, float tmin, Hit &h);
+    bool traverse(const Ray &r, float tmin, Hit &h, float tstart, float tend);
+
+    void sortTriangles(std::vector<Triangle *> &triangles,
+                       int dimSplit, float splitDistance,
+                       std::vector<Triangle *> &trianglesLeft,
+                       std::vector<Triangle *> &trianglesRight);
+
+    void splitBox(const BoundingBox &box, int dimSplit, float splitDistance,
+                  BoundingBox &boxLeft, BoundingBox &boxRight);
+
+    KDTree *buildTree(std::vector<Triangle *> triangles,
+                      const BoundingBox &box,
+                      int dimSplit);
+
 };
 
 #endif // KDTREE_H

@@ -29,6 +29,11 @@ public:
 
     std::string   type;
     Material     *material;
+    bool isMesh = false;
+    bool isTriangle = false;
+    std::vector<Triangle> & getTriangles() {
+        return std::vector<Triangle>{};
+    }
 };
 
 
@@ -103,6 +108,7 @@ public:
         _normals[1] = nb;
         _normals[2] = nc;
         material = m;
+        isTriangle = true;
     }
 
     virtual bool intersect(const Ray &ray, float tmin, Hit &hit) const override;

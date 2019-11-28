@@ -6,17 +6,16 @@
 #include "Ray.h"
 #include "VecUtils.h"
 #include "KDTree.h"
+#include "KDTree.cpp"
+#include <iostream>
 
 #include <limits>
 
+KDTree *root = NULL;
+
 Renderer::Renderer(const ArgParser &args) :
     _args(args),
-    _scene(args.input_file) {
-        // FINAL PROJECT
-        // Calculate bounding box of entire
-        // scene to start building KD-tree
-        _scene.getGroup()->calculateBoundingBox();
-}
+    _scene(args.input_file) {}
 
 void
 Renderer::Render() {
@@ -74,8 +73,6 @@ Renderer::traceRay(const Ray &r,
                    Hit &h) const {
     // The starter code only implements basic drawing of sphere primitives.
     // You will implement phong shading, recursive ray tracing, and shadow rays.
-
-    // TODO: IMPLEMENT
     if (_scene.getGroup()->intersect(r, tmin, h)) {
         Vector3f I = _scene.getAmbientLight() * h.getMaterial()->getDiffuseColor();
         Vector3f p = r.pointAtParameter(h.getT());

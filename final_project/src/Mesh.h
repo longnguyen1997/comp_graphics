@@ -21,6 +21,9 @@ class Mesh : public Object3D {
         return _triangles;
     }
 
+    BoundingBox box;
+    Vector3f minBounds, maxBounds;
+
   private:
     std::vector<Triangle> _triangles;
     mutable Octree octree;
