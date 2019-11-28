@@ -122,30 +122,46 @@ Mesh::Mesh(const std::string &filename, Material *material) :
         maxBounds.z() = max(maxBounds.z(), (t.box).maxBounds().z());
     }
     box = BoundingBox(minBounds, maxBounds);
+    this->triangles = triangles;
 
     // Start on x axis.
     int dimSplit = 0;
     rootKD = rootKD->buildTree(triangles,
                                box,
                                dimSplit);
+    checkTrianglesInKDTree();
 
     octree.build(this);
 }
 
-bool
-Mesh::intersect(const Ray &r, float tmin, Hit &h) const {
-#if 0
+bool checkTriangle(Triangle *t, KDTree *node) {
+    if (node->isLeaf) {
+        for (Triangle *tNode : node->triangles) {
+            if (tNode == t) return true;
+        }
+        return false;
+    }
+    return checkTriangle(t, node->left) or checkTriangle(t, node->right);
+}
+
+bool Mesh::checkTrianglesInKDTree() {
+    // Verifies that all triangles in this mesh
+    // are actually in the constructed KD tree.
+    for (Triangle *t : triangles) {
+        if (!checkTriangle(t, rootKD)) throw - 1;
+    }
+    return true;
+}
+
+bool Mesh::intersect(const Ray &r, float tmin, Hit &h) const {
+#if 1
     ray = &r;
     hit = &h;
     tm = tmin;
     return octree.intersect(r);
 #else
     // FINAL PROJECT
-    if (rootKD->traverse(r, tmin, h)) {
-        return true;
-    } else {
-        return false;
-    }
+    return rootKD->traverse(r, tmin, h);
     // bool result = false;
     // for (Triangle t : _triangles) {
     //     if (t.intersect(r, tmin, h)) {
@@ -156,8 +172,7 @@ Mesh::intersect(const Ray &r, float tmin, Hit &h) const {
 #endif
 }
 
-bool
-Mesh::intersectTrig(int idx, const Ray &r) const {
+bool Mesh::intersectTrig(int idx, const Ray &r) const {
     const Triangle &triangle = _triangles[idx];
     bool result = triangle.intersect(r, tm, *hit);
     return result;

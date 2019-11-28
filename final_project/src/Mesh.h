@@ -21,11 +21,14 @@ class Mesh : public Object3D {
         return _triangles;
     }
 
+    bool checkTrianglesInKDTree();
+
     BoundingBox box;
     Vector3f minBounds, maxBounds;
 
   private:
     std::vector<Triangle> _triangles;
+    std::vector<Triangle*> triangles;
     mutable Octree octree;
     mutable const Ray *ray;
     mutable Hit *hit;

@@ -6,19 +6,28 @@
 bool PRINT_DEBUG = true;
 
 bool KDTree::traverse(const Ray &r, float tmin, Hit &h) {
+    cout << "KDTree::traverse CALLED" << endl;
     vector<float> pathTimes = box.intersect(r);
-    if (pathTimes.size() == 0) return false;
+    if (pathTimes.size() == 0) {
+        cout << "   > no intersection found!" << endl;
+        return false;
+    }
     return traverse(r, tmin, h, pathTimes[0], pathTimes[1]);
 }
 
 bool KDTree::traverse(const Ray &r, float tmin, Hit &h, float tstart, float tend) {
+    cout << "Recursive traversal called!" << endl;
     if (isLeaf) {
+        cout << "   > encountered leaf node, checking for intersections...";
         for (Triangle *triangle : triangles) {
-            if (triangle->intersect(r, tmin, h)) return true;
+            if (triangle->intersect(r, tmin, h)) cout << "   > INTERSECTION FOUND" << endl;
+            return true;
         }
     } else {
+        // TODO: Check for wonkiness here.
         float inverseDirAxis = 1.f / r.getDirection()[dimSplit];
         float t = (splitDistance - r.getOrigin()[dimSplit]) * (r.getDirection()[dimSplit] == 0 ? INFINITY : inverseDirAxis);
+
         if(t < tmin) return false;
 
         // near is the side containing the origin of the ray
@@ -29,10 +38,13 @@ bool KDTree::traverse(const Ray &r, float tmin, Hit &h, float tstart, float tend
 
         // 3 cases to check for
         if( t >= tend || t < 0) {
+            cout << "   > exploring left tree..." << endl;
             return near->traverse(r, tmin, h, tstart, tend);
         } else if (t <= tstart) {
+            cout << "   > exploring right tree..." << endl;
             return far->traverse(r, tmin, h, tstart, tend);
         } else {
+            cout << "   > exploring both subtrees..." << endl;
             return (near->traverse(r, tmin, h, tstart, t) ||
                     far->traverse(r, tmin, h, t, tend));
         }
@@ -112,6 +124,7 @@ KDTree *KDTree::buildTree(std::vector<Triangle *> triangles,
     KDTree *root = new KDTree();
     int nextDimension = (dimSplit + 1) % 3;
     root->dimSplit = dimSplit;
+    root->splitDistance = splitDistance;
     root->box = box;
     root->left = buildTree(trianglesLeft, boxLeft, nextDimension);
     root->right = buildTree(trianglesRight, boxRight, nextDimension);
