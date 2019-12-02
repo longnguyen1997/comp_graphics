@@ -141,7 +141,15 @@ bool checkTriangle(Triangle *t, KDTree *node) {
         }
         return false;
     }
-    return checkTriangle(t, node->left) or checkTriangle(t, node->right);
+    bool A = false;
+    bool B = false;
+    if (t->box.min[node->dimSplit] <= node->splitPosition) {
+        A = checkTriangle(t, node->left);
+    }
+    if (t->box.max[node->dimSplit] >= node->splitPosition) {
+        B = checkTriangle(t, node->right);
+    }
+    return A or B;
 }
 
 bool Mesh::checkTrianglesInKDTree() {
@@ -154,7 +162,7 @@ bool Mesh::checkTrianglesInKDTree() {
 }
 
 bool Mesh::intersect(const Ray &r, float tmin, Hit &h) const {
-#if 1
+#if 0
     ray = &r;
     hit = &h;
     tm = tmin;

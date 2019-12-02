@@ -1,5 +1,7 @@
 #include "Object3D.h"
 
+using namespace std;
+
 bool Sphere::intersect(const Ray &r, float tmin, Hit &h) const {
     // BEGIN STARTER
 
@@ -90,20 +92,55 @@ bool Plane::intersect(const Ray &r, float tmin, Hit &h) const {
     return true;
 }
 
-bool Triangle::intersect(const Ray &r, float tmin, Hit &h) const {
+bool Triangle::intersect(const Ray &r, float tmin, Hit &h, float tstart, float tend) const {
+    // cout << "Triangle::intersect CALLED" << endl;
     // See L10 - Raycasting II slides, page 16.
     Matrix3f A(
         _v[0] - _v[1], _v[0] - _v[2], r.getDirection()
     );
     Vector3f B = _v[0] - r.getOrigin();
     Vector3f X = A.inverse() * B;
+    // cout << "   > calculated X using A.inverse() and B" << endl;
     // Barycentric ratios
     float alpha = 1 - X[0] - X[1];
     float beta = X[0];
     float gamma = X[1];
+    // cout << "   > calculated barycentric coordinates for triangle-ray intersection" << endl;
     float t = X[2];
+    // FINAL PROJECT
+    /*
+    For leaves, do NOT report intersection if t is not in [tnear, tfar].
+    – Important for primitives that overlap multiple nodes!
+    */
+    if (t < tstart or t > tend) return false;
+    // cout << "   > extracted t = X[2]" << endl;
     if (t > h.getT() || t < tmin || alpha < 0 || beta < 0 || gamma < 0) return false;
+    // cout << "   > attempting to set Hit &h..." << endl;
     h.set(t, material, (alpha * _normals[0] + beta * _normals[1] + gamma * _normals[2]).normalized());
+    // cout << "   > set Hit &h with the appropriate intersection properties" << endl;
+    return true;
+}
+
+bool Triangle::intersect(const Ray &r, float tmin, Hit &h) const {
+    // cout << "Triangle::intersect CALLED" << endl;
+    // See L10 - Raycasting II slides, page 16.
+    Matrix3f A(
+        _v[0] - _v[1], _v[0] - _v[2], r.getDirection()
+    );
+    Vector3f B = _v[0] - r.getOrigin();
+    Vector3f X = A.inverse() * B;
+    // cout << "   > calculated X using A.inverse() and B" << endl;
+    // Barycentric ratios
+    float alpha = 1 - X[0] - X[1];
+    float beta = X[0];
+    float gamma = X[1];
+    // cout << "   > calculated barycentric coordinates for triangle-ray intersection" << endl;
+    float t = X[2];
+    // cout << "   > extracted t = X[2]" << endl;
+    if (t > h.getT() || t < tmin || alpha < 0 || beta < 0 || gamma < 0) return false;
+    // cout << "   > attempting to set Hit &h..." << endl;
+    h.set(t, material, (alpha * _normals[0] + beta * _normals[1] + gamma * _normals[2]).normalized());
+    // cout << "   > set Hit &h with the appropriate intersection properties" << endl;
     return true;
 }
 

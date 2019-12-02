@@ -14,26 +14,31 @@ class Ray
 {
   public:
     Ray(const Vector3f &orig, const Vector3f &dir) :
-        _origin(orig),
-        _direction(dir)
+        _orig(orig),
+        _dir(dir)
     {
-    }
+        this->orig = orig;
+        this->dir = dir;
+        invdir = Vector3f(1.f / dir[0], 1.f / dir[1], 1.f / dir[2]); 
+        sign[0] = (invdir.x() < 0); 
+        sign[1] = (invdir.y() < 0); 
+        sign[2] = (invdir.z() < 0); 
+    } 
 
     const Vector3f getOrigin() const {
-        return _origin;
+        return _orig;
     }
 
     const Vector3f getDirection() const {
-        return _direction;
+        return _dir;
     }
 
     Vector3f pointAtParameter(float t) const {
-        return _origin + _direction * t;
+        return _orig + _dir * t;
     }
 
-  private:
-    Vector3f _origin;
-    Vector3f _direction;
+    Vector3f invdir, _orig, _dir, orig, dir;
+    int sign[3];
 
 };
 

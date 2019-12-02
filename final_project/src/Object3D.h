@@ -27,18 +27,25 @@ public:
         return max;
     }
 
+    Vector3f bounds(int type) const {
+        if (type == 0) return min;
+        return max;
+    }
+
+    // dx/y/z functions are all correct
+
     float dx() const {
-        return max.x() - min.x();
+        return abs(max.x() - min.x());
     };
     float dy() const {
-        return max.y() - min.y();
+        return abs(max.y() - min.y());
     };
     float dz() const {
-        return max.z() - min.z();
+        return abs(max.z() - min.z());
     };
 
     float d(int axis) const {
-        return max[axis] - min[axis];
+        return abs(max[axis] - min[axis]);
     }
 
     float isPlanar() {
@@ -49,48 +56,31 @@ public:
     // https://www.scratchapixel.com/lessons/3d-basic-rendering/
     // minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection.
     vector<float> intersect(const Ray &r) {
-        Vector3f orig = r.getOrigin();
-        Vector3f dir = r.getDirection();
-        float tmin = (min.x() - orig.x()) / dir.x();
-        float tmax = (max.x() - orig.x()) / dir.x();
+        float tmin, tmax, tymin, tymax, tzmin, tzmax;
 
-        if (tmin > tmax) swap(tmin, tmax);
-
-        float tymin = (min.y() - orig.y()) / dir.y();
-        float tymax = (max.y() - orig.y()) / dir.y();
-
-        if (tymin > tymax) swap(tymin, tymax);
+        tmin = (bounds(r.sign[0]).x() - r.orig.x()) * r.invdir.x();
+        tmax = (bounds(1 - r.sign[0]).x() - r.orig.x()) * r.invdir.x();
+        tymin = (bounds(r.sign[1]).y() - r.orig.y()) * r.invdir.y();
+        tymax = (bounds(1 - r.sign[1]).y() - r.orig.y()) * r.invdir.y();
 
         if ((tmin > tymax) || (tymin > tmax))
             return vector<float> {};
-
         if (tymin > tmin)
             tmin = tymin;
-
         if (tymax < tmax)
             tmax = tymax;
 
-        float tzmin = (min.z() - orig.z()) / dir.z();
-        float tzmax = (max.z() - orig.z()) / dir.z();
-
-        if (tzmin > tzmax) swap(tzmin, tzmax);
+        tzmin = (bounds(r.sign[2]).z() - r.orig.z()) * r.invdir.z();
+        tzmax = (bounds(1 - r.sign[2]).z() - r.orig.z()) * r.invdir.z();
 
         if ((tmin > tzmax) || (tzmin > tmax))
             return vector<float> {};
-
         if (tzmin > tmin)
             tmin = tzmin;
-
         if (tzmax < tmax)
             tmax = tzmax;
 
-        // See slide 69 of L12 - Accelerated Raytracing.
-        // Slides call them tstart and tend
-        // to avoid confusion with tmin for our rays.
-        float tstart = tmin;
-        float tend = tmax;
-
-        return vector<float> {tstart, tend};
+        return vector<float> {tmin, tmax};
     }
 };
 
@@ -185,6 +175,9 @@ public:
 
     virtual bool intersect(const Ray &ray, float tmin, Hit &hit) const override;
 
+    bool intersect(const Ray &ray, float tmin, Hit &hit, float tstart, float tend) const;
+
+
     const Vector3f &getVertex(int index) const {
         assert(index < 3);
         return _v[index];
@@ -212,25 +205,6 @@ public:
     // Return number of objects in group
     int getGroupSize() const;
 
-    // FINAL PROJECT
-    // Bounding box for entire group; TRIANGLES ONLY
-    void calculateBoundingBox() {
-        Vector3f minBounds, maxBounds;
-        // Get the global extrema.
-        for (Object3D *obj : m_members) {
-            // Check that the object is a triangle
-            if (obj->isTriangle) {
-                // Slide 43 of L12 - Accelerating Raytracing.
-                minBounds.x() = min(minBounds.x(), (obj->box).minBounds().x());
-                minBounds.y() = min(minBounds.y(), (obj->box).minBounds().y());
-                minBounds.z() = min(minBounds.z(), (obj->box).minBounds().z());
-                maxBounds.x() = max(maxBounds.x(), (obj->box).maxBounds().x());
-                maxBounds.y() = max(maxBounds.y(), (obj->box).maxBounds().y());
-                maxBounds.z() = max(maxBounds.z(), (obj->box).maxBounds().z());
-                box = BoundingBox(minBounds, maxBounds);
-            }
-        }
-    }
 private:
     std::vector<Object3D *> m_members;
 };

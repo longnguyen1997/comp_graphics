@@ -19,7 +19,7 @@ public:
 
     KDTree *left, *right; // children
     int dimSplit = 0; // either X, Y, or Z axis
-    float splitDistance; // from origin along split axis
+    float splitPosition; // from origin along split axis
     bool isLeaf = false;
     std::vector<Triangle *> triangles; // only leaves have lists of triangles
     BoundingBox box; // box partition for this node
@@ -30,11 +30,11 @@ public:
     bool traverse(const Ray &r, float tmin, Hit &h, float tstart, float tend);
 
     void sortTriangles(std::vector<Triangle *> &triangles,
-                       int dimSplit, float splitDistance,
+                       int dimSplit, float axisSplitPosition,
                        std::vector<Triangle *> &trianglesLeft,
                        std::vector<Triangle *> &trianglesRight);
 
-    void splitBox(const BoundingBox &box, int dimSplit, float splitDistance,
+    void splitBox(const BoundingBox &box, int dimSplit, float axisSplitPosition,
                   BoundingBox &boxLeft, BoundingBox &boxRight);
 
     KDTree *buildTree(std::vector<Triangle *> triangles,
