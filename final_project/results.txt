@@ -1,0 +1,10 @@
+RESULTS
+
+STANFORD BUNNY - 4968 TRIANGLES
+time ./a4 -input ../data/bunny_4k.txt -size 500 500 -bounces 31
+OCTREE
+0.88s user 0.00s system 99% cpu 0.888 total
+KD TREE (LEAF_SIZE = 11), NO SPLIT OPTIMIZATION
+1.06s user 0.00s system 99% cpu 1.067 total
+BRUTE FORCE (too long, early termination)
+160.94s user 0.27s system 99% cpu 2:41.38 total

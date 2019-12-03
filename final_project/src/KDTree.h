@@ -39,7 +39,8 @@ public:
 
     KDTree *buildTree(std::vector<Triangle *> triangles,
                       const BoundingBox &box,
-                      int dimSplit);
+                      int dimSplit,
+                      int numLeafTris = 50);
 
 };
 

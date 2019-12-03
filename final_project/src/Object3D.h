@@ -45,7 +45,7 @@ public:
     };
 
     float d(int axis) const {
-        return abs(max[axis] - min[axis]);
+        return max[axis] - min[axis];
     }
 
     float isPlanar() {
@@ -79,7 +79,6 @@ public:
             tmin = tzmin;
         if (tzmax < tmax)
             tmax = tzmax;
-
         return vector<float> {tmin, tmax};
     }
 };
@@ -104,6 +103,7 @@ public:
     }
 
     virtual bool intersect(const Ray &r, float tmin, Hit &h) const = 0;
+    void fixBBox(const Matrix4f &m);
 
     std::string   type;
     Material     *material;
@@ -162,12 +162,14 @@ public:
 
         // FINAL PROJECT
         Vector3f minBounds, maxBounds;
+        
         minBounds.x() = min(a.x(), min(b.x(), c.x()));
         minBounds.y() = min(a.y(), min(b.y(), c.y()));
         minBounds.z() = min(a.z(), min(b.z(), c.z()));
-        maxBounds.x() = max(a.x(), min(b.x(), c.x()));
-        maxBounds.y() = max(a.y(), min(b.y(), c.y()));
-        maxBounds.z() = max(a.z(), min(b.z(), c.z()));
+
+        maxBounds.x() = max(a.x(), max(b.x(), c.x()));
+        maxBounds.y() = max(a.y(), max(b.y(), c.y()));
+        maxBounds.z() = max(a.z(), max(b.z(), c.z()));
         box = BoundingBox(minBounds, maxBounds);
 
 
