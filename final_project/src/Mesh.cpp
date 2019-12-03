@@ -147,11 +147,11 @@ Mesh::Mesh(const std::string &filename, Material *material) : Object3D(material)
     this->triangles = triangles;
 
     // Start on x axis.
-    int dimSplit = 0;
+    int splitDimension = 0;
     this->rootKD = this->rootKD->buildTree(triangles,
                                box,
-                               dimSplit,
-                               triangles.size() / 50);
+                               splitDimension
+                               );
     checkTrianglesInKDTree();
 
     octree.build(this);
@@ -170,11 +170,11 @@ bool checkTriangle(Triangle *t, KDTree *node)
     }
     bool A = false;
     bool B = false;
-    if (t->box.min[node->dimSplit] <= node->splitPosition)
+    if (t->box.min[node->splitDimension] <= node->splitPosition)
     {
         A = checkTriangle(t, node->left);
     }
-    if (t->box.max[node->dimSplit] >= node->splitPosition)
+    if (t->box.max[node->splitDimension] >= node->splitPosition)
     {
         B = checkTriangle(t, node->right);
     }
@@ -203,16 +203,16 @@ bool Mesh::intersect(const Ray &r, float tmin, Hit &h) const
 #else
 
     // FINAL PROJECT: Smarter traversal
-    // return rootKD->traverse(r, tmin, h);
+    return rootKD->traverse(r, tmin, h);
 
     // Naive traversal across all triangles
-    bool result = false;
-    for (Triangle t : _triangles) {
-        if (t.intersect(r, tmin, h)) {
-            result = true;
-        }
-    }
-    return result;
+    // bool result = false;
+    // for (Triangle t : _triangles) {
+    //     if (t.intersect(r, tmin, h)) {
+    //         result = true;
+    //     }
+    // }
+    // return result;
 #endif
 }
 

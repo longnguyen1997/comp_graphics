@@ -1,7 +1,11 @@
 #include "Object3D.h"
 #include "KDTree.h"
 #include <limits>
+#include <algorithm>
+#include <experimental/algorithm>
 #include <iostream>
+#include <random>
+#include <vector>
 
 bool PRINT_DEBUG = true;
 
@@ -10,13 +14,10 @@ bool KDTree::traverse(const Ray &r, float tmin, Hit &h)
     vector<float> pathTimes = box.intersect(r);
     if (pathTimes.empty())
     {
-        // cout << "No intersection with bounding box" << endl;
-        return false; // looks good - not a bug unless ray-box intersection is wrong
+        return false;
     }
     float tstart = pathTimes[0];
     float tend = pathTimes[1];
-    if (tstart > tend)
-        throw - 1;
     return traverse(r, tmin, h, tstart, tend);
 }
 
@@ -25,15 +26,10 @@ bool KDTree::traverse(const Ray &r, float tmin, Hit &h, float tstart, float tend
     assert(tstart <= tend);
     if (isLeaf)
     {
-        // leaf code here should be correct, don't touch
         bool result = false;
         for (Triangle *triangle : triangles)
         {
-            if (triangle->intersect(r, tmin, h))
-            {
-                // cout << "   > INTERSECTION FOUND AT LEAF NODE" << endl;
-                result = true;
-            }
+            result |= triangle->intersect(r, tmin, h);
         }
         return result;
     }
@@ -43,17 +39,15 @@ bool KDTree::traverse(const Ray &r, float tmin, Hit &h, float tstart, float tend
         Vector3f orig = r.getOrigin();
         Vector3f dir = r.getDirection();
         // P = dt + O -> t = (P - O) / d
-        float t = (splitPosition - orig[dimSplit]) / (dir[dimSplit]);
+        float t = (splitPosition - orig[splitDimension]) / (dir[splitDimension]);
 
         KDTree *front, *back;
         front = left;
         back = right;
-        // TODO: Account for transformations. Not in this implementation.
-        // int belowFirst = (orig[dimSplit] < splitPosition) ||
-        //                  (orig[dimSplit] == splitPosition && dir[dimSplit] <= 0);
-        // if (not belowFirst)
-        //     swap(front, back);
-        if (dir[dimSplit] < 0) swap(front, back);
+        int belowFirst = (orig[splitDimension] < splitPosition) ||
+                         (orig[splitDimension] == splitPosition && dir[splitDimension] <= 0);
+        if (not belowFirst)
+            swap(front, back);
 
         // 3 cases to check for
         if (t <= tstart)
@@ -66,38 +60,39 @@ bool KDTree::traverse(const Ray &r, float tmin, Hit &h, float tstart, float tend
         }
         else
         {
-            bool A = false;
-            bool B = false;
-            A = front->traverse(r, tmin, h, tstart, t);
-            B = back->traverse(r, tmin, h, t, tend);
-            return A or B;
+            if (front->traverse(r, tmin, h, tstart, t) and h.getT() < t)
+                /*
+                If front region already contains something,
+                terminate the search.
+                */
+                return true;
+            return back->traverse(r, tmin, h, t, tend);
         }
     }
 }
 
-void KDTree::splitBox(const BoundingBox &box, int dimSplit, float axisSplitPosition,
+void KDTree::splitBox(const BoundingBox &box, int splitDimension, float splitPosition,
                       BoundingBox &boxLeft, BoundingBox &boxRight)
 {
     boxLeft = BoundingBox(box.minBounds(), box.maxBounds());
     boxRight = BoundingBox(box.minBounds(), box.maxBounds());
-    boxLeft.max[dimSplit] = axisSplitPosition;
-    boxRight.min[dimSplit] = axisSplitPosition;
-    assert(boxLeft.max[dimSplit] <= boxRight.min[dimSplit]);
+    boxLeft.max[splitDimension] = splitPosition;
+    boxRight.min[splitDimension] = splitPosition;
+    assert(boxLeft.max[splitDimension] <= boxRight.min[splitDimension]);
 }
 
-// this is definitely correct, don't touch
 void KDTree::sortTriangles(vector<Triangle *> &triangles,
-                           int dimSplit, float axisSplitPosition,
+                           int splitDimension, float splitPosition,
                            vector<Triangle *> &trianglesLeft,
                            vector<Triangle *> &trianglesRight)
 {
     for (Triangle *t : triangles)
     {
-        if (t->box.min[dimSplit] <= axisSplitPosition)
+        if (t->box.min[splitDimension] <= splitPosition)
         {
             trianglesLeft.push_back(t);
         }
-        if (t->box.max[dimSplit] >= axisSplitPosition)
+        if (t->box.max[splitDimension] >= splitPosition)
         {
             trianglesRight.push_back(t);
         }
@@ -106,7 +101,7 @@ void KDTree::sortTriangles(vector<Triangle *> &triangles,
 
 KDTree *KDTree::buildTree(std::vector<Triangle *> triangles,
                           const BoundingBox &box,
-                          int dimSplit, int numLeafTris)
+                          int splitDimension)
 {
     if (!PRINT_DEBUG)
         cout.rdbuf(nullptr);
@@ -123,30 +118,32 @@ KDTree *KDTree::buildTree(std::vector<Triangle *> triangles,
     }
 
     // Recursive case: build subtrees.
+
+    assert(box.min[splitDimension] < box.max[splitDimension]); // segfault if not true!
+
+    // SPLITTING ALGORITHM: MIDPOINT
     // Naively split at half of the current distance.
-    // TODO: Implement sliding midpoint.
-    assert(box.min[dimSplit] < box.max[dimSplit]);
-    float axisSplitPosition = box.min[dimSplit] + (box.d(dimSplit) / 2.f); // midpoint method
+    float splitPosition = box.min[splitDimension] + (box.d(splitDimension) / 2.f);
+    std::vector<Triangle *> trianglesLeft, trianglesRight;
+    sortTriangles(triangles,
+                  splitDimension,
+                  splitPosition,
+                  trianglesLeft,
+                  trianglesRight);
     BoundingBox boxLeft, boxRight;
     splitBox(box,
-             dimSplit,
-             axisSplitPosition,
+             splitDimension,
+             splitPosition,
              boxLeft,
              boxRight);
 
-    std::vector<Triangle *> trianglesLeft, trianglesRight;
-    sortTriangles(triangles,
-                  dimSplit,
-                  axisSplitPosition,
-                  trianglesLeft,
-                  trianglesRight);
-
-    int nextDimension = (dimSplit + 1) % 3;
+    // Cycle through dimensions.
+    int nextDimension = (splitDimension + 1) % 3;
     KDTree *root = new KDTree();
-    root->dimSplit = dimSplit;
-    root->splitPosition = axisSplitPosition;
+    root->splitDimension = splitDimension;
+    root->splitPosition = splitPosition;
     root->box = box;
-    root->left = buildTree(trianglesLeft, boxLeft, nextDimension, numLeafTris);
-    root->right = buildTree(trianglesRight, boxRight, nextDimension, numLeafTris);
+    root->left = buildTree(trianglesLeft, boxLeft, nextDimension);
+    root->right = buildTree(trianglesRight, boxRight, nextDimension);
     return root;
 }
