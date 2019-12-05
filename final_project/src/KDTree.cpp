@@ -107,7 +107,7 @@ KDTree *KDTree::buildTree(std::vector<Triangle *> triangles,
         cout.rdbuf(nullptr);
 
     // Base case.
-    if (triangles.size() <= 11)
+    if (triangles.size() <= 21)
     {
         // cout << "Leaf node, " << triangles.size() << endl;
         KDTree *leaf = new KDTree();
@@ -138,7 +138,13 @@ KDTree *KDTree::buildTree(std::vector<Triangle *> triangles,
              boxRight);
 
     // Cycle through dimensions.
-    int nextDimension = (splitDimension + 1) % 3;
+    int nextDimension = 0;
+    if (box.dy() > box.dx())
+        nextDimension = 1;
+    if (nextDimension == 0 and box.dz() > box.dx())
+        nextDimension = 2;
+    if (nextDimension == 1 and box.dz() > box.dy())
+        nextDimension = 2;
     KDTree *root = new KDTree();
     root->splitDimension = splitDimension;
     root->splitPosition = splitPosition;

@@ -195,7 +195,7 @@ bool Mesh::checkTrianglesInKDTree()
 
 bool Mesh::intersect(const Ray &r, float tmin, Hit &h) const
 {
-#if 0
+#if 1
     ray = &r;
     hit = &h;
     tm = tmin;

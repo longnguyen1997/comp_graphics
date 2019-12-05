@@ -191,9 +191,12 @@ public:
         // Calculate the centroid to sort when building
         // the KD tree.
         centroid = 0.33f * Vector3f(
-                               a.x() + b.x() + c.x(),
-                               a.y() + b.y() + c.y(),
-                               a.z() + b.z() + c.z());
+                                        a.x() + b.x() + c.x(),
+                                        a.y() + b.y() + c.y(),
+                                        a.z() + b.z() + c.z());
+        centroidX = centroid[0];
+        centroidY = centroid[1];
+        centroidZ = centroid[2];
     }
 
     virtual bool intersect(const Ray &ray, float tmin, Hit &hit) const override;
@@ -213,6 +216,7 @@ public:
     }
 
     Vector3f centroid;
+    float centroidX, centroidY, centroidZ;
 
 private:
     Vector3f _v[3];
